@@ -18,5 +18,8 @@ In order to run the server in a development environment simply execute `python s
 
 This is purely a development environment only hosted using the Flask framework. DO NOT use this server in a production environment as it is unstable and only used for development and testing.
 
+### Redis
+To locally run the redis database first install redis `brew install redis`. To start the redis server run `redis-server`. To establish a connection to the database type `redis-cli` from the command line. 
+
 ## Production Server
 To host this server in a production setting, gunicorn is used to provide a stable environment for the server to operate in. Execute `gunicorn -w4 "server:launch()"` which will serve the server on `localhost:8000` again but in a more secure fashion.
