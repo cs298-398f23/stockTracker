@@ -23,3 +23,8 @@ To locally run the redis database first install redis `brew install redis`. To s
 
 ## Production Server
 To host this server in a production setting, gunicorn is used to provide a stable environment for the server to operate in. Execute `gunicorn -w4 "server:launch()"` which will serve the server on `localhost:8000` again but in a more secure fashion.
+
+### AWS Configuration
+To configure this system securely, you must first create a VPC through AWS. Create the CIDR block of 10.0.0.0/24. Then make sure there is only 1 availability zone, 1 public subnet, and 1 private subnet. Lastly, select the option that ensures there is 1 NAT gateway per availability zone.
+
+After configuring the VPC, create the Amazon EC2 instance for the web server. Scroll down to the network settings section and click the 'Edit' button at the top. Change the VPC setting and select the VPC that you created above. Next, ensure that you place this machine within the public subnet of the VPC. Change the Auto-assign public IP to enable as well. Now configure the inbound traffic rules so that both port 22 (ssh) and port 80 (HTTP) is allowed from 0.0.0.0 (anywhere). Click the 'Advanced Details' dropdown menu and scroll all the way down to the bottom until you see the 'User Data' section. Here you can upload the `web-server.sh` file in this repo. Create the instance by clicking the orange 'Launch Instance' button on the right. 
