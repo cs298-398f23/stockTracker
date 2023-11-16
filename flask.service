@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/home/ec2-user/stockTracker/.venv/bin/gunicorn --chdir /home/ec2-user/stockTracker --bind 0.0.0.0:80 "server:launch()"
+ExecStart=/home/ec2-user/stockTracker/.venv/bin/gunicorn --chdir /home/ec2-user/stockTracker --bind 0.0.0.0:80 -w4 "server:launch()"
 
 [Install]
 WantedBy=multi-user.target

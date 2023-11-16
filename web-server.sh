@@ -1,3 +1,5 @@
+#!/bin/bash
+set -x
 sudo yum install -y git
 git clone https://github.com/cs298-398f23/stockTracker.git
 cd stockTracker
