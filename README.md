@@ -21,6 +21,8 @@ This is purely a development environment only hosted using the Flask framework. 
 ### Redis
 To locally run the redis database first install redis `brew install redis`. To start the redis server run `redis-server`. To establish a connection to the database type `redis-cli` from the command line. 
 
+To add data from ticker.redis first start the redis server. Then on the command line run `redis-cli -h localhost -p 6379 < ticker.redis`. To access data from the command line run HGET key field exp `HGET AAPL name`.
+
 ## Production Server
 To host this server in a production setting, gunicorn is used to provide a stable environment for the server to operate in. Execute `gunicorn -w4 "server:launch()"` which will serve the server on `localhost:8000` again but in a more secure fashion.
 
