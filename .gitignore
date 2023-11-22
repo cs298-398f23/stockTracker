@@ -21,3 +21,11 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# The Python virtual environment
+.venv
+
+# Any environment variables stored here such as API keys
+.env
+
+# Cached Python libraries
+__pycache__
