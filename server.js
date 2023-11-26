@@ -3,9 +3,13 @@ const path = require('path');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
+const redis = require('redis');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+const client = redis.createClient();
+
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'build')));
@@ -40,6 +44,28 @@ app.get('/api/stocks', async (req, res) => {
     console.error('Error fetching data:', error.message);
     res.status(500).send('Internal Server Error');
   }
+});
+
+app.get('/api/getFavorites', (req, res) => {
+  // Assuming ticker.redis is in the same format as your example
+  const tickers = ['AAPL', 'ADBE', 'AMZN', 'CZR', 'DLTR', 'DNKN', 'DTV', 'EBAY', 'FB', 'MSFT'];
+  const favorites = {};
+
+  // Retrieve data from Redis for each ticker
+  tickers.forEach(ticker => {
+    client.hgetall(ticker, (err, data) => {
+      if (err) {
+        console.error(`Error fetching data for ${ticker} from Redis:`, err.message);
+      } else {
+        favorites[ticker] = data;
+      }
+
+      // Check if all tickers have been processed
+      if (Object.keys(favorites).length === tickers.length) {
+        res.json(favorites);
+      }
+    });
+  });
 });
 
 app.get('*', (req, res) => {

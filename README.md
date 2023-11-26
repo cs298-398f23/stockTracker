@@ -5,7 +5,7 @@ Web application that creates an immersive user experience to track trending stoc
 
 In order to install the necceary dependencies run the following command:
 
-npm install express axios cheerio react react-dom chart.js cors
+npm install express axios cheerio react react-dom chart.js cors redis
 
 ## Running the App: Development
 
