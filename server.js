@@ -8,7 +8,7 @@ const redis = require('redis');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const client = redis.createClient();
+
 
 
 app.use(cors());
@@ -46,27 +46,44 @@ app.get('/api/stocks', async (req, res) => {
   }
 });
 
-app.get('/api/getFavorites', (req, res) => {
-  // Assuming ticker.redis is in the same format as your example
-  const tickers = ['AAPL', 'ADBE', 'AMZN', 'CZR', 'DLTR', 'DNKN', 'DTV', 'EBAY', 'FB', 'MSFT'];
+app.get('/api/getFavorites', async (req, res) => {
+  
   const favorites = {};
 
-  // Retrieve data from Redis for each ticker
-  tickers.forEach(ticker => {
-    client.hgetall(ticker, (err, data) => {
-      if (err) {
-        console.error(`Error fetching data for ${ticker} from Redis:`, err.message);
-      } else {
-        favorites[ticker] = data;
-      }
+  const client = redis.createClient();
 
-      // Check if all tickers have been processed
-      if (Object.keys(favorites).length === tickers.length) {
-        res.json(favorites);
-      }
+  try {
+    await client.connect();
+
+    const tickers = [];
+
+  // Get all keys
+  await client.keys('*').then((keys) => {
+      tickers.push(...keys);
+
+    })
+
+    // Create an array of promises for each ticker
+    const promises = tickers.map(async (ticker) => {
+      const company = await client.get(ticker);
+      favorites[ticker] = company;
     });
-  });
+
+    // Wait for all promises to resolve
+    await Promise.all(promises);
+
+    res.json(favorites);
+  } 
+  catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).send('Internal Server Error');
+  } 
+  finally {
+    // Close the Redis client
+    client.quit();
+  }
 });
+
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
