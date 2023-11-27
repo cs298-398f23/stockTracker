@@ -6,6 +6,8 @@ import { Chart } from 'chart.js/auto';
 function App() {
   const [page, setPage] = useState('gainers');
   const [stocks, setStocks] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [showFavorites, setShowFavorites] = useState(false);
   // const [intervalID, setIntervalID] = useState(setInterval(fetchData(page)))
 
 
@@ -21,6 +23,13 @@ function App() {
     
   }, [page]);
 
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+
+    
+
 
   async function fetchData (pageName) {
     try {
@@ -30,6 +39,17 @@ function App() {
       console.error('Error fetching data:', error.message);
     }
   };
+
+
+  async function fetchFavorites () {
+    try {
+      const response = await axios.get('http://localhost:3001/api/getFavorites');
+      setFavorites(response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error.message);
+    } 
+  }
+
 
 
 // Extract stock change values for the bar chart
@@ -91,6 +111,34 @@ useEffect(() => {
         ))}
       </tbody>
       <canvas id="myBarChart"></canvas>
+      <button id="favorites" onClick={() => {
+        
+        // Set state to trigger re-render
+        setShowFavorites(!showFavorites);
+      }}>
+        Show Favorites
+      </button>
+
+      {showFavorites && (
+        <table>
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Favorite Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+            Object.keys(favorites).map((ticker) => (
+              <tr key={ticker}>
+                <td>{ticker}</td>
+                <td>{favorites[ticker]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      
     </div>
   );
 }
