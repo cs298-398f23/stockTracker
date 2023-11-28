@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'build')));
 
 app.get('/api/stocks', async (req, res) => {
   try {
-    // Replace the URL with the actual URL you want to fetch data from
+    // Google finance page you want to fetch data from
     const url = `https://www.google.com/finance/markets/${req.query.pageName}`;
     const response = await axios.get(url);
 
@@ -30,9 +30,15 @@ app.get('/api/stocks', async (req, res) => {
       
       if (index < 10)  // Limit to 10 results (top 10 stocks
       {
-        const name = $(element).find('.COaKTb').text().trim();
-        const change = $(element).find('.JwB6zf').text().trim();
-        stocks.push({ name, change });
+        const name = $(element).find('.ZvmM7').text().trim();
+        const ticker = $(element).find('.COaKTb').text().trim();
+        
+        const price = $(element).find('.P2Luy').text()
+        const sign = price.split('$')[0]
+        const change = sign + $(element).find('.JwB6zf').text().trim() ;
+        
+        
+        stocks.push({ name, ticker, price, change });
       } else {
           return false;
       }

@@ -64,7 +64,7 @@ useEffect(() => {
   const myBarChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: stocks.map((stock) => `${stock.name}`),
+      labels: stocks.map((stock) => `${stock.ticker}`),
       datasets: [{
         label: 'Stock Change (%)',
         data: stockChangeValues,
@@ -90,22 +90,7 @@ return (
   <div style={{ display: 'flex' }}>
     {/* Left side */}
     <div style={{ flex: 1 }}>
-      <h1>Stocks</h1>
-      <button id="gainers" onClick={() => setPage('gainers')}>Gainers</button>
-      <button id="losers" onClick={() => setPage('losers')}>Losers</button>
-      <button id="active" onClick={() => setPage('most-active')}>Most Active</button>
-      <tbody>
-        <tr>
-          <th>Stock Name</th>
-          <th>Change</th>
-        </tr>
-        {stocks.map((stock, index) => (
-          <tr key={index}>
-            <td>{stock.name}</td>
-            <td>{stock.change}</td>
-          </tr>
-        ))}
-      </tbody>
+      
       <button id="favorites" onClick={() => setShowFavorites(!showFavorites)}>
         Show Favorites
       </button>
@@ -132,7 +117,37 @@ return (
 
     {/* Right side */}
     <div style={{ flex: 1 }}>
-      <canvas id="myBarChart"></canvas>
+      
+    <div div style={{ flex: 1 }}>
+        <div>
+        <button id="gainers" onClick={() => setPage('gainers')}>Gainers</button>
+        <button id="losers" onClick={() => setPage('losers')}>Losers</button>
+        <button id="active" onClick={() => setPage('most-active')}>Most Active</button>
+        <canvas id="myBarChart"></canvas>
+      </div>
+        <div style={{ margin: '20px', textAlign: 'center' }}>
+        <tbody style={{ fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#333' }}>
+          <tr style={{ background: '#f2f2f2' }}>
+            <th style={{ padding: '10px', textAlign: 'center' }}>Ticker</th>
+            <th style={{ padding: '10px', textAlign: 'center' }}>Stock Name</th>
+            <th style={{ padding: '10px', textAlign: 'center' }}>Stock Price</th>
+            <th style={{ padding: '10px', textAlign: 'center' }}>% Change</th>
+          </tr>
+          {stocks.map((stock, index) => (
+            <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
+              <td style={{ padding: '10px' }}>{stock.ticker}</td>
+              <td style={{ padding: '10px' }}>{stock.name}</td>
+              <td style={{ padding: '10px' }}>{stock.price}</td>
+              <td style={{ padding: '10px', color: stock.change.includes('-') ? 'red' : 'green' }}>
+                {stock.change}
+              </td>
+            </tr>
+  ))}
+</tbody>
+</div>
+
+     </div>
+      
     </div>
   </div>
 );
