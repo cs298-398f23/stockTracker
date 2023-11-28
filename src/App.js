@@ -64,9 +64,9 @@ useEffect(() => {
   const myBarChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: stocks.map((stock) => `${stock.name}`),
+      labels: stocks.map((stock) => `${stock.ticker}`),
       datasets: [{
-        label: 'Stock Change (%)',
+        label: 'Top 10 Stock Change %)',
         data: stockChangeValues,
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         borderColor: 'rgba(75, 192, 192, 1)',
@@ -86,36 +86,12 @@ useEffect(() => {
   return () => myBarChart.destroy();
 }, [stockChangeValues]);
 
-  return (
-    <div>
-      <h1>Stocks</h1>
-      <button id="gainers" onClick={() => {
-        setPage('gainers')
-        }}>Gainers</button>
-      <button id="losers" onClick={() => {
-        setPage('losers')
-        }}>Losers</button>
-      <button id="active" onClick={() => {
-        setPage('most-active')
-        }}>Most Active</button>
-      <tbody>
-        <tr>
-          <th>Stock Name</th>
-          <th>Change</th>
-        </tr>
-        {stocks.map((stock, index) => (
-          <tr key={index}>
-            <td>{stock.name}</td>
-            <td>{stock.change}</td>
-          </tr>
-        ))}
-      </tbody>
-      <canvas id="myBarChart"></canvas>
-      <button id="favorites" onClick={() => {
-        
-        // Set state to trigger re-render
-        setShowFavorites(!showFavorites);
-      }}>
+return (
+  <div style={{ display: 'flex' }}>
+    {/* Left side */}
+    <div style={{ flex: 1 }}>
+      
+      <button id="favorites" onClick={() => setShowFavorites(!showFavorites)}>
         Show Favorites
       </button>
 
@@ -128,8 +104,7 @@ useEffect(() => {
             </tr>
           </thead>
           <tbody>
-            {
-            Object.keys(favorites).map((ticker) => (
+            {Object.keys(favorites).map((ticker) => (
               <tr key={ticker}>
                 <td>{ticker}</td>
                 <td>{favorites[ticker]}</td>
@@ -138,9 +113,45 @@ useEffect(() => {
           </tbody>
         </table>
       )}
+    </div>
+
+    {/* Right side */}
+    <div style={{ flex: 1 }}>
+
+    <div div style={{ flex: 1 }}>
+        <div>
+        <button id="gainers" onClick={() => setPage('gainers')}>Gainers</button>
+        <button id="losers" onClick={() => setPage('losers')}>Losers</button>
+        <button id="active" onClick={() => setPage('most-active')}>Most Active</button>
+        <canvas id="myBarChart"></canvas>
+      </div>
+        <div style={{ margin: '20px', textAlign: 'center' }}>
+        <tbody style={{ fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#333' }}>
+          <tr style={{ background: '#f2f2f2' }}>
+            <th style={{ padding: '10px', textAlign: 'left' }}>Ticker</th>
+            <th style={{ padding: '10px', textAlign: 'left' }}>Stock Name</th>
+            <th style={{ padding: '10px', textAlign: 'left' }}>Stock Price</th>
+            <th style={{ padding: '10px', textAlign: 'left' }}>% Change</th>
+          </tr>
+          {stocks.map((stock, index) => (
+            <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
+              <td style={{ padding: '10px', textAlign: 'left' }}>{stock.ticker}</td>
+              <td style={{ padding: '10px', textAlign: 'left' }}>{stock.name}</td>
+              <td style={{ padding: '10px', textAlign: 'left' }}>{stock.price}</td>
+              <td style={{ padding: '10px', textAlign: 'left', color: stock.change.includes('-') ? 'red' : 'green' }}>
+                {stock.change}
+              </td>
+            </tr>
+  ))}
+</tbody>
+</div>
+
+     </div>
       
     </div>
-  );
+  </div>
+);
+
 }
 
 export default App;
