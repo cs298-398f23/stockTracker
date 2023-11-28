@@ -86,18 +86,14 @@ useEffect(() => {
   return () => myBarChart.destroy();
 }, [stockChangeValues]);
 
-  return (
-    <div>
+return (
+  <div style={{ display: 'flex' }}>
+    {/* Left side */}
+    <div style={{ flex: 1 }}>
       <h1>Stocks</h1>
-      <button id="gainers" onClick={() => {
-        setPage('gainers')
-        }}>Gainers</button>
-      <button id="losers" onClick={() => {
-        setPage('losers')
-        }}>Losers</button>
-      <button id="active" onClick={() => {
-        setPage('most-active')
-        }}>Most Active</button>
+      <button id="gainers" onClick={() => setPage('gainers')}>Gainers</button>
+      <button id="losers" onClick={() => setPage('losers')}>Losers</button>
+      <button id="active" onClick={() => setPage('most-active')}>Most Active</button>
       <tbody>
         <tr>
           <th>Stock Name</th>
@@ -110,12 +106,7 @@ useEffect(() => {
           </tr>
         ))}
       </tbody>
-      <canvas id="myBarChart"></canvas>
-      <button id="favorites" onClick={() => {
-        
-        // Set state to trigger re-render
-        setShowFavorites(!showFavorites);
-      }}>
+      <button id="favorites" onClick={() => setShowFavorites(!showFavorites)}>
         Show Favorites
       </button>
 
@@ -128,8 +119,7 @@ useEffect(() => {
             </tr>
           </thead>
           <tbody>
-            {
-            Object.keys(favorites).map((ticker) => (
+            {Object.keys(favorites).map((ticker) => (
               <tr key={ticker}>
                 <td>{ticker}</td>
                 <td>{favorites[ticker]}</td>
@@ -138,9 +128,15 @@ useEffect(() => {
           </tbody>
         </table>
       )}
-      
     </div>
-  );
+
+    {/* Right side */}
+    <div style={{ flex: 1 }}>
+      <canvas id="myBarChart"></canvas>
+    </div>
+  </div>
+);
+
 }
 
 export default App;
