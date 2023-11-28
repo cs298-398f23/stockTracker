@@ -17,7 +17,8 @@ app.use(express.static(path.join(__dirname, 'build')));
 app.get('/api/stocks', async (req, res) => {
   try {
     // Google finance page you want to fetch data from
-    const url = `https://www.google.com/finance/markets/${req.query.pageName}`;
+    const pageName = req.query.pageName;
+    const url = `https://www.google.com/finance/markets/${pageName}`;
     const response = await axios.get(url);
 
     
@@ -38,7 +39,7 @@ app.get('/api/stocks', async (req, res) => {
         const change = sign + $(element).find('.JwB6zf').text().trim() ;
         
         
-        stocks.push({ name, ticker, price, change });
+        stocks.push({ pageName, name, ticker, price, change });
       } else {
           return false;
       }
