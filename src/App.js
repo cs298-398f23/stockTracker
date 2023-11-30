@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Chart } from 'chart.js/auto';
+import SearchBar from './SearchBar';
 
 
 function App() {
   const [page, setPage] = useState('gainers');
+  const [spotlightedStock, setSpotlightedStock] = useState(
+    {"name": "Alphabet Inc Class A", 
+    "ticker": "GOOGL", 
+    "price": "", 
+    "changePercent": "",
+    "changePrice": "",
+    }
+    );
+  // const [spotlightedStockInfo, setSpotlightedStockInfo] = useState({});
   const [stocks, setStocks] = useState([]);
-  const [favorites, setFavorites] = useState([]);
-  const [showFavorites, setShowFavorites] = useState(false);
-  // const [intervalID, setIntervalID] = useState(setInterval(fetchData(page)))
 
 
   useEffect(() => {
 
     const newIntervalID = setInterval(() => {
-      fetchData(page);
+      fetchGraphInfo(page);
+      
     }, 5000);
 
     // Clear the interval when the component unmounts or when the page changes
@@ -24,14 +32,13 @@ function App() {
   }, [page]);
 
   useEffect(() => {
-    fetchFavorites();
-  }, []);
-
-
     
+    fetchSpotlightedStock(spotlightedStock);
+    
+  }, [spotlightedStock]);
 
 
-  async function fetchData (pageName) {
+  async function fetchGraphInfo (pageName) {
     try {
       const response = await axios.get('http://localhost:3001/api/stocks', { params: { pageName } });
       setStocks(response.data);
@@ -40,16 +47,18 @@ function App() {
     }
   };
 
-
-  async function fetchFavorites () {
+  async function fetchSpotlightedStock (stock) {
     try {
-      const response = await axios.get('http://localhost:3001/api/getFavorites');
-      setFavorites(response.data);
+      const response = await axios.get('http://localhost:3001/api/getSpotlightedStock', { params: { stock } });
+      
+      if(response.data.newStock === undefined){
+
+      setSpotlightedStock(response.data);
+      }
     } catch (error) {
       console.error('Error fetching data:', error.message);
-    } 
-  }
-
+    }
+  };
 
 
 // Extract stock change values for the bar chart
@@ -87,52 +96,62 @@ useEffect(() => {
 }, [stockChangeValues]);
 
 return (
-  <div style={{ display: 'flex' }}>
-    {/* Left side */}
-    <div style={{ flex: 1 }}>
-      
-      <button id="favorites" onClick={() => setShowFavorites(!showFavorites)}>
-        Show Favorites
-      </button>
-
-      {showFavorites && (
-        <table>
-          <thead>
-            <tr>
-              <th>Ticker</th>
-              <th>Favorite Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.keys(favorites).map((ticker) => (
-              <tr key={ticker}>
-                <td>{ticker}</td>
-                <td>{favorites[ticker]}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr', height: '100vh' }}>
+    {/* Left side (Stock Info) */}
+    <div style={{ gridRow: '1', gridColumn: '1', flex: '1', overflow: 'auto', padding: '20px' }}>
+      {/* Your existing stock info code */}
+      <div style={{ textAlign: 'center', border: '1px solid #ccc', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+        {spotlightedStock ? (
+          <>
+            <h3 style={{ margin: '0' }}>{spotlightedStock.name}</h3>
+            <h4 style={{ margin: '5px 0' }}>{spotlightedStock.ticker}</h4>
+          
+            <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold', color: spotlightedStock.changePrice !== undefined ? (spotlightedStock.changePrice.includes('-') ? 'red' : 'green') : ''}}>
+              {spotlightedStock.price}
+            </p>
+            <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? 'red' : 'green' }}>
+              {spotlightedStock.changePercent}
+            </p>
+            <p style={{ margin: '5px 0', fontSize: '16px', color: spotlightedStock.changePrice.includes('-') ? 'red' : 'green' }}>
+              {spotlightedStock.changePrice}
+            </p>
+          </>
+        ) : (
+          <h3>Loading...</h3>
+        )}
+      </div>
+      {spotlightedStock.changePercent !==""?<SearchBar setSpotlightedStock={setSpotlightedStock}/>: <div></div> }
+    
     </div>
+    
 
-    {/* Right side */}
-    <div style={{ flex: 1 }}>
+    {/* Right side (Graph, Buttons, Search Bar, and Table) */}
+    <div style={{ gridRow: '1', gridColumn: '2', display: 'grid', gridTemplateColumns: '1fr', gridTemplateRows: 'auto auto auto', gap: '20px', padding: '20px' }}>
+      {/* Graph */}
+      <canvas id="myBarChart" style={{ gridRow: '1', gridColumn: '1', width: '100%', height: '100%', maxHeight: '50vh' }}></canvas>
 
-    <div div style={{ flex: 1 }}>
-        <div>
+      {/* Buttons */}
+      <div style={{ gridRow: '2', gridColumn: '1', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
         <button id="gainers" onClick={() => setPage('gainers')}>Gainers</button>
         <button id="losers" onClick={() => setPage('losers')}>Losers</button>
         <button id="active" onClick={() => setPage('most-active')}>Most Active</button>
-        <canvas id="myBarChart"></canvas>
       </div>
-        <div style={{ margin: '20px', textAlign: 'center' }}>
-        <tbody style={{ fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#333' }}>
-          <tr style={{ background: '#f2f2f2' }}>
+
+      
+
+      {/* Table */}
+      <div style={{ gridRow: '3', gridColumn: '1', textAlign: 'center' }}>
+        <table style={{ margin: '10px auto', fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#333', width: '100%' }}>
+        
+        <thead style={{ background: '#f2f2f2' }}>
+          <tr>
             <th style={{ padding: '10px', textAlign: 'left' }}>Ticker</th>
             <th style={{ padding: '10px', textAlign: 'left' }}>Stock Name</th>
             <th style={{ padding: '10px', textAlign: 'left' }}>Stock Price</th>
             <th style={{ padding: '10px', textAlign: 'left' }}>% Change</th>
           </tr>
+        </thead>
+        <tbody>
           {stocks.map((stock, index) => (
             <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
               <td style={{ padding: '10px', textAlign: 'left' }}>{stock.ticker}</td>
@@ -142,16 +161,15 @@ return (
                 {stock.change}
               </td>
             </tr>
-  ))}
-</tbody>
-</div>
-
-     </div>
+          ))}
+        </tbody>
       
+        </table>
+      </div>
     </div>
   </div>
 );
 
-}
+            }
 
 export default App;
