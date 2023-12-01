@@ -4,6 +4,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
 const redis = require('redis');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -53,7 +54,7 @@ app.get('/api/stocks', async (req, res) => {
   }
 });
 
-app.get('/api/getFavorites', async (req, res) => {
+app.get('/api/getAllNasdaq', async (req, res) => {
   
   const favorites = {};
 
@@ -90,6 +91,67 @@ app.get('/api/getFavorites', async (req, res) => {
     client.quit();
   }
 });
+
+app.get('/api/getSpotlightedStock', async (req, res) => {
+  try {
+    let requestStock = req.query.stock;
+    let requestTicker = requestStock.ticker;
+
+    console.log("----------------------");
+    console.log("99 - Request Stock: " +  requestTicker);
+    console.log(requestStock);
+    console.log("----------------------");
+    
+    if (requestTicker === '') {
+      requestTicker = 'GOOGL';
+    }
+    
+    console.log("103 - Stock Ticker: " + requestTicker);
+
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    const url = `https://www.google.com/finance/quote/${requestTicker}:NASDAQ`;
+    await page.goto(url);
+    console.log(url)
+    // Use Puppeteer to wait for the element with class 'JwB6zf'
+    await page.waitForSelector('.enJeMd');
+
+    // Extract data from the page
+    let stockInfo = {};
+    stockInfo.name = await page.$eval('.zzDege', element => element.textContent.trim());
+
+    let ticker = await page.$eval('.PdOqHc', element => element.textContent.trim());
+    stockInfo.ticker = ticker.split('Home')[1].split('•')[0].trim();
+    stockInfo.price = await page.$eval('.YMlKec.fxKbKc', element => element.textContent.trim());
+
+    const changeElement = await page.$('.enJeMd');
+    stockInfo.changePrice = await changeElement.$eval('.P2Luy', element => element.textContent.trim());
+    stockInfo.changePercent = await changeElement.$eval('.JwB6zf', element => element.textContent.trim());
+
+  
+
+    console.log("11111 - Response: ");
+    console.log(stockInfo);
+    console.log("~~~~~~~~~~~~~~~~~~~~~~~~ ");
+
+    if (requestStock.ticker !== stockInfo.ticker || requestStock.price !== stockInfo.price) {
+      console.log("New Stock:");
+      console.log(stockInfo);
+      res.json(stockInfo);
+    } else {
+      console.log("OLD STOCK");
+      res.json({ "newStock": "false" });
+    }
+
+    console.log("~~~~~~~~~~~~~~~~~~~~~~~~ ");
+    await browser.close();
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 
 
 app.get('*', (req, res) => {
