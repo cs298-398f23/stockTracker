@@ -9,9 +9,6 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-
-
-
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'build')));
 
@@ -97,18 +94,13 @@ app.get('/api/getSpotlightedStock', async (req, res) => {
     let requestStock = req.query.stock;
     let requestTicker = requestStock.ticker;
 
-    console.log("----------------------");
-    console.log("99 - Request Stock: " +  requestTicker);
-    console.log(requestStock);
-    console.log("----------------------");
     
     if (requestTicker === '') {
       requestTicker = 'GOOGL';
     }
-    
-    console.log("103 - Stock Ticker: " + requestTicker);
+  
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ headless: 'new' });
     const page = await browser.newPage();
 
     const url = `https://www.google.com/finance/quote/${requestTicker}:NASDAQ`;
@@ -129,28 +121,69 @@ app.get('/api/getSpotlightedStock', async (req, res) => {
     stockInfo.changePrice = await changeElement.$eval('.P2Luy', element => element.textContent.trim());
     stockInfo.changePercent = await changeElement.$eval('.JwB6zf', element => element.textContent.trim());
 
-  
 
-    console.log("11111 - Response: ");
-    console.log(stockInfo);
-    console.log("~~~~~~~~~~~~~~~~~~~~~~~~ ");
+    if (requestStock.price !== stockInfo.price || requestStock.price !== stockInfo.price) {
 
-    if (requestStock.ticker !== stockInfo.ticker || requestStock.price !== stockInfo.price) {
-      console.log("New Stock:");
-      console.log(stockInfo);
       res.json(stockInfo);
     } else {
-      console.log("OLD STOCK");
       res.json({ "newStock": "false" });
     }
 
-    console.log("~~~~~~~~~~~~~~~~~~~~~~~~ ");
     await browser.close();
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).send('Internal Server Error');
   }
 });
+
+app.get('/api/getFavoriteStocks', async (req, res) => {
+  const favoriteStocks = [];
+
+  try {
+    console.log(req.query.stockTickers);
+
+    // Use Promise.all to wait for all promises to resolve
+    await Promise.all(req.query.stockTickers.map(async (currTicker) => {
+      console.log("Current Ticker: " + currTicker);
+
+      if (currTicker === '') {
+        currTicker = 'GOOGL';
+      }
+
+      const browser = await puppeteer.launch({ headless: 'new' });
+      const page = await browser.newPage();
+
+      const url = `https://www.google.com/finance/quote/${currTicker}:NASDAQ`;
+      await page.goto(url);
+
+      // Use Puppeteer to wait for the element with class 'JwB6zf'
+      await page.waitForSelector('.enJeMd');
+
+      // Extract data from the page
+      let stockInfo = {};
+      stockInfo.name = await page.$eval('.zzDege', element => element.textContent.trim());
+
+      let ticker = await page.$eval('.PdOqHc', element => element.textContent.trim());
+      stockInfo.ticker = ticker.split('Home')[1].split('•')[0].trim();
+      stockInfo.price = await page.$eval('.YMlKec.fxKbKc', element => element.textContent.trim());
+
+      const changeElement = await page.$('.enJeMd');
+      console.log("Change Element: " + changeElement)
+      stockInfo.changePrice = await changeElement.$eval('.P2Luy', element => element.textContent.trim());
+      stockInfo.changePercent = await changeElement.$eval('.JwB6zf', element => element.textContent.trim());
+
+      favoriteStocks.push(stockInfo);
+
+      await browser.close();
+    }));
+
+      res.json(favoriteStocks);
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 
 
 
