@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const SearchBar = ({ setSpotlightedStock }) => {
+const SearchBar = ({ setSpotlightedStock, setRequestedTicker }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allOptions, setAllOptions] = useState([]);
   const [currentOptions, setCurrentOptions] = useState([]);
@@ -74,6 +74,7 @@ const SearchBar = ({ setSpotlightedStock }) => {
                     changePrice: '',
                     changePercent: '',
                   });
+                  setRequestedTicker(option);
                   setSearchTerm('');
                   setCurrentOptions([]);
                 }}

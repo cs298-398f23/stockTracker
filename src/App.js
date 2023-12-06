@@ -5,6 +5,7 @@ import SearchBar from './SearchBar';
 
 function App() {
   const [activeTab, setActiveTab] = useState('gainers');
+  const [requestedTicker, setRequestedTicker] = useState('GOOGL')
   const [spotlightedStock, setSpotlightedStock] = useState({
     "name": "Alphabet Inc Class A",
     "ticker": "GOOGL",
@@ -14,8 +15,8 @@ function App() {
   });
   // const [spotlightedStockInfo, setSpotlightedStockInfo] = useState({});
   const [stocks, setStocks] = useState([]);
-  const [favoriteTickers, setFavoriteTickers] = useState(["TSLA", "AAPL"]);
   const [favoriteStocks, setFavoriteStocks] = useState([]);
+  const [username, setUsername] = useState("Guest");
 
   useEffect(() => {
     const newIntervalID = setInterval(() => {
@@ -26,8 +27,43 @@ function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    fetchSpotlightedStock(spotlightedStock);
+    
+      fetchSpotlightedStock(spotlightedStock);
   }, [spotlightedStock]);
+
+  useEffect(() => {
+    const newIntervalID = setInterval(() => {
+      
+    fetchFavoriteStocks(username);
+    }, 3000);
+
+    return () => clearInterval(newIntervalID);
+  }, [username]);
+  
+
+  
+
+  useEffect(() => {
+    if(username === "Guest"){
+    updateFavoriteStocks(username, [{"name": "Alphabet Inc Class A",
+    "ticker": "GOOGL",}]);
+    }
+  }, []);
+
+  // useEffect(() => {
+  //   fetchFavoriteStocks(username);
+  //   // fetchSpotlightedStock({"ticker": "GOOGL"})
+  // } , [username]);
+
+
+  function updateFavoriteStocks(username, favorites) {
+    try {
+      console.log(favorites)
+      axios.get('http://localhost:3001/api/updateFavoriteStocks', { params: { username, favorites } }).then(() => {fetchFavoriteStocks(username);});
+    } catch (error) {
+      console.error('Error fetching data:', error.message);
+    }
+  }
 
   async function fetchGraphInfo(pageName) {
     try {
@@ -41,31 +77,50 @@ function App() {
   async function fetchSpotlightedStock(stock) {
     try {
       const response = await axios.get('http://localhost:3001/api/getSpotlightedStock', { params: { stock } });
-      if (response.data.newStock === undefined) {
-        setSpotlightedStock(response.data);
+  
+      console.log("Response: ", response.data.ticker, "Request:", requestedTicker);
+      if (response.data.ticker === requestedTicker) {
+        setSpotlightedStock((prevSpotlightedStock) => {
+          // Use the previous state to avoid any race conditions
+          if (prevSpotlightedStock.ticker === requestedTicker) {
+            return response.data;
+          } else {
+            // If the requestedTicker has changed in the meantime, do not update the state
+            return prevSpotlightedStock;
+          }
+        });
       }
     } catch (error) {
       console.error('Error fetching data:', error.message);
     }
   }
+  
 
-  async function editFavorites (editOption, ticker) {
-    let tickers = [...favoriteTickers]
-    if(editOption && !favoriteTickers.includes(ticker)){
-      tickers.push(ticker);
+  async function editFavorites (editOption, stock) {
+    let stocks = [...favoriteStocks]
+    const condensedStock = {"name": stock.name, "ticker": stock.ticker};
+    if(editOption && !Object.keys(favoriteStocks[0]).includes(stock.ticker)){
+      
+      stocks.push(condensedStock);
     }
     else{
-      const index = favoriteTickers.indexOf(ticker);
-      tickers.pop(index);
+      //figure this out
+      const index = favoriteStocks.indexOf(condensedStock.ticker);
+      stocks.pop(index);
+      if(stocks.length === 0){
+        stocks.push({ "name": "Alphabet Inc Class A",
+        "ticker": "GOOGL",})
+
+      }
     }
     
-    setFavoriteTickers(...tickers);
+    updateFavoriteStocks(username, stocks);
 
   }
 
-  async function fetchFavoriteStocks (stockTickers) {
+  async function fetchFavoriteStocks (username) {
     try {
-      const response = await axios.get('http://localhost:3001/api/getFavoriteStocks', { params: { stockTickers } });
+      const response = await axios.get('http://localhost:3001/api/getFavoriteStocks', { params: { username } });
 
       console.log(response.data);
       setFavoriteStocks(response.data);
@@ -112,58 +167,111 @@ function App() {
 const handleTabClick = (tab) => {
   setActiveTab(tab);
 };
+const handleSelectChange = (e) => {
+  const selectedTicker = e.target.value;
+  console.log(selectedTicker);
+  const selectedStock = favoriteStocks.find((stock) => {
+    console.log(stock, stock.ticker)
+    return stock.ticker === selectedTicker});
+  console.log(selectedStock);
+
+  // Check if the selected stock is different from the current spotlightedStock
+  if (selectedStock && selectedStock.ticker !== spotlightedStock.ticker) {
+    setSpotlightedStock(selectedStock);
+    setRequestedTicker(selectedStock.ticker); // Update requestedTicker if needed
+  }
+};
+
 
 return (
   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr', height: '100vh' }}>
     {/* Left side (Stock Info) */}
     <div style={{ gridRow: '1', gridColumn: '1', flex: '1', overflow: 'auto', padding: '20px' }}>
       {/* Your existing stock info code */}
-      {spotlightedStock.changePercent !==""?<SearchBar setSpotlightedStock={setSpotlightedStock}/>: <div></div> }
-      {<button onClick={() => editFavorites(true, spotlightedStock.ticker)}>+</button>}
-      {<button onClick={() => editFavorites(false, spotlightedStock.ticker)}>-</button>}
-      <div style={{ textAlign: 'center', border: '1px solid #ccc', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-        {
-          <>
-            <h3 style={{ margin: '0' }}>{spotlightedStock.name}</h3>
-            <h4 style={{ margin: '5px 0' }}>{spotlightedStock.ticker}</h4>
-          
-            <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold', color: spotlightedStock.changePrice !== undefined ? (spotlightedStock.changePrice.includes('-') ? 'red' : 'green') : ''}}>
-              {spotlightedStock.price}
-            </p>
-            <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? 'red' : 'green' }}>
-              {spotlightedStock.changePercent}
-            </p>
-            <p style={{ margin: '5px 0', fontSize: '16px', color: spotlightedStock.changePrice.includes('-') ? 'red' : 'green' }}>
-              {spotlightedStock.changePrice}
-            </p>
-          </>
-        }
-      </div>
-      
-      {favoriteStocks.length > 0 && (
-        <>
-        <div style={{ textAlign: 'center', border: '1px solid #ccc', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, .1)' }}>Favorites</div>
-      
-          {favoriteStocks.map((stock, index) => (
-            <div style={{ textAlign: 'center', border: '1px solid #ccc', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-            <div key={index}>
-              <h3 style={{ margin: '0' }}>{stock.name}</h3>
-              <h4 style={{ margin: '5px 0' }}>{stock.ticker}</h4>
-              <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold', color: stock.changePrice !== undefined ? (stock.changePrice.includes('-') ? 'red' : 'green') : ''}}>
-                {stock.price}
-              </p>
-              <p style={{ margin: '5px 0', color: stock.changePrice.includes('-') ? 'red' : 'green' }}>
-                {stock.changePercent}
-              </p>
-              <p style={{ margin: '5px 0', fontSize: '16px', color: stock.changePrice.includes('-') ? 'red' : 'green' }}>
-                {stock.changePrice}
-              </p>
-            </div>
-            </div>
-          ))}
-        </>
-        
+      <div style={{ gridRow: '4', gridColumn: '1', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
+  {spotlightedStock.changePercent !== "" ? <SearchBar setSpotlightedStock={setSpotlightedStock} setRequestedTicker={setRequestedTicker} fetchSpotlightedStock={fetchSpotlightedStock}/> : <div></div>}
+  
+  {/* Add some space */}
+  <div style={{ marginLeft: 'auto' }}>
+    <label htmlFor="dropdown" style={{ marginRight: '10px' }}>Select Favorite Stock To View:</label>
+    <select id="dropdown" style={{ padding: '8px', borderRadius: '4px', backgroundColor: '#fff', border: '1px solid #ccc', fontSize: '14px' }}
+    onChange={(e) => handleSelectChange(e)}
+    value={spotlightedStock.ticker}>
+      {console.log(favoriteStocks)}
+      {favoriteStocks.length > 0 && favoriteStocks.map((stock, index) =>(
+      <option value={stock.ticker} selected={spotlightedStock.ticker === stock.ticker}>{stock.name}: {stock.ticker}</option>))}
+      {/* Add more options as needed */}
+    </select>
+  </div>
+</div>
+
+<div style={{ textAlign: 'center', marginTop: '10px' }}>
+  <button
+    onClick={() => editFavorites(true, spotlightedStock)}
+    style={{
+      padding: '10px 20px',
+      fontSize: '16px',
+      fontWeight: 'bold',
+      backgroundColor: '#2ecc71',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '5px',
+      cursor: 'pointer',
+      transition: 'background-color 0.3s',
+    }}
+  >
+    Add to Favorites +
+  </button>
+  <button
+    onClick={() => editFavorites(false, spotlightedStock)}
+    style={{
+      padding: '10px 20px',
+      fontSize: '16px',
+      fontWeight: 'bold',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '5px',
+      cursor: 'pointer',
+      transition: 'background-color 0.3s',
+       marginLeft: '10px', 
+       backgroundColor: '#e74c3c' 
+    }}
+  >
+    Remove from Favorites -
+  </button>
+</div>
+
+      <div style={{
+  textAlign: 'center',
+  border: '1px solid #eaeaea',
+  padding: '20px',
+  borderRadius: '8px',
+  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+  backgroundColor: '#f9f9f9',
+  maxWidth: '300px',
+  margin: 'auto',
+}}>
+  {spotlightedStock.name && (
+    <>
+      <h3 style={{ margin: '0', color: '#333', fontSize: '24px' }}>{spotlightedStock.name}</h3>
+      <h4 style={{ margin: '5px 0', color: '#555', fontSize: '18px' }}>{spotlightedStock.ticker}</h4>
+      <p style={{ margin: '15px 0', fontSize: '22px', fontWeight: 'bold', color: spotlightedStock.changePrice !== undefined ? (spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71') : '' }}>
+        {spotlightedStock.price}
+      </p>
+      {spotlightedStock.changePercent && (
+        <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '16px' }}>
+          {spotlightedStock.changePercent}
+        </p>
       )}
+      {spotlightedStock.changePrice && (
+        <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '16px' }}>
+          {spotlightedStock.changePrice}
+        </p>
+      )}
+    </>
+  )}
+</div>
+
 
     </div>
     
