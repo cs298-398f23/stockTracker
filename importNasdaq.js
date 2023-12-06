@@ -3,7 +3,7 @@ const csv = require('csvtojson');
 const redis = require('redis');
 
 const client = redis.createClient();
-client.connect();
+client.connect()
 
 // Read CSV file
 const csvFilePath = 'nasdaq-listed-symbols_csv.csv';
@@ -13,15 +13,23 @@ csv()
   .then((jsonArray) => {
     // Import data into Redis
     jsonArray.forEach((data) => {
-      const ticker = data.Symbol;
-      const companyName = data['Company Name'];
+      
+      const companyInfo = {
+        name: data['Company Name'],
+        ticker: data['Symbol'],
+        // Add other fields as needed
+      };
 
-      // Set data in Redis
-      client.set(ticker, companyName, (err) => {
+      // Serialize the object to a JSON string
+      const serializedCompanyInfo = JSON.stringify(companyInfo);
+
+      // Set data in Redis with a prefixed key
+      const prefixedKey = `NASDAQ:${companyInfo.ticker}`;
+      client.set(prefixedKey, serializedCompanyInfo, (err) => {
         if (err) {
-          console.error(`Error setting data for ${ticker}:`, err.message);
+          console.error(`Error setting data for ${prefixedKey}:`, err.message);
         } else {
-          console.log(`Data set for ${ticker}: ${companyName}`);
+          console.log(`Data set for ${prefixedKey}: ${serializedCompanyInfo}`);
         }
       });
     });

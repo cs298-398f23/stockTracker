@@ -5,12 +5,10 @@ const cheerio = require('cheerio');
 const cors = require('cors');
 const redis = require('redis');
 const puppeteer = require('puppeteer');
+const { request } = require('http');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-
-
-
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'build')));
@@ -55,9 +53,7 @@ app.get('/api/stocks', async (req, res) => {
 });
 
 app.get('/api/getAllNasdaq', async (req, res) => {
-  
-  const favorites = {};
-
+  const stocks = {};
   const client = redis.createClient();
 
   try {
@@ -65,55 +61,44 @@ app.get('/api/getAllNasdaq', async (req, res) => {
 
     const tickers = [];
 
-  // Get all keys
-  await client.keys('*').then((keys) => {
+    // Get keys with the NASDAQ prefix
+    await client.keys('NASDAQ:*').then((keys) => {
       tickers.push(...keys);
-
-    })
+    });
 
     // Create an array of promises for each ticker
     const promises = tickers.map(async (ticker) => {
-      const company = await client.get(ticker);
-      favorites[ticker] = company;
+      const stock = await client.get(ticker);
+      const stockInfo = JSON.parse(stock);
+      stocks[stockInfo.ticker] = stockInfo.name;
+      
     });
 
     // Wait for all promises to resolve
     await Promise.all(promises);
 
-    res.json(favorites);
-  } 
-  catch (error) {
+    res.json(stocks);
+  } catch (error) {
     console.error("Error:", error.message);
     res.status(500).send('Internal Server Error');
-  } 
-  finally {
+  } finally {
     // Close the Redis client
     client.quit();
   }
 });
 
+
 app.get('/api/getSpotlightedStock', async (req, res) => {
   try {
     let requestStock = req.query.stock;
     let requestTicker = requestStock.ticker;
-
-    console.log("----------------------");
-    console.log("99 - Request Stock: " +  requestTicker);
-    console.log(requestStock);
-    console.log("----------------------");
     
-    if (requestTicker === '') {
-      requestTicker = 'GOOGL';
-    }
-    
-    console.log("103 - Stock Ticker: " + requestTicker);
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ headless: 'new' });
     const page = await browser.newPage();
 
     const url = `https://www.google.com/finance/quote/${requestTicker}:NASDAQ`;
     await page.goto(url);
-    console.log(url)
     // Use Puppeteer to wait for the element with class 'JwB6zf'
     await page.waitForSelector('.enJeMd');
 
@@ -129,22 +114,10 @@ app.get('/api/getSpotlightedStock', async (req, res) => {
     stockInfo.changePrice = await changeElement.$eval('.P2Luy', element => element.textContent.trim());
     stockInfo.changePercent = await changeElement.$eval('.JwB6zf', element => element.textContent.trim());
 
-  
+    
+    res.json(stockInfo);
 
-    console.log("11111 - Response: ");
-    console.log(stockInfo);
-    console.log("~~~~~~~~~~~~~~~~~~~~~~~~ ");
 
-    if (requestStock.ticker !== stockInfo.ticker || requestStock.price !== stockInfo.price) {
-      console.log("New Stock:");
-      console.log(stockInfo);
-      res.json(stockInfo);
-    } else {
-      console.log("OLD STOCK");
-      res.json({ "newStock": "false" });
-    }
-
-    console.log("~~~~~~~~~~~~~~~~~~~~~~~~ ");
     await browser.close();
   } catch (error) {
     console.error("Error:", error.message);
@@ -152,6 +125,59 @@ app.get('/api/getSpotlightedStock', async (req, res) => {
   }
 });
 
+app.get('/api/getFavoriteStocks', async (req, res) => {
+  
+  let  favorites = [];
+  const client = redis.createClient();
+
+  try {
+    await client.connect();
+
+    // Get all keys
+    await client.get(`${req.query.username}:favorites`).then((stock) => {
+      res.json(JSON.parse(stock));})
+
+    
+  } 
+  catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).send('Internal Server Error');
+  } 
+  finally {
+    // Close the Redis client
+    client.quit();
+  }
+});
+
+
+app.get('/api/updateFavoriteStocks', async (req, res) => {
+  
+  const favorites = req.query.favorites;
+  const client = redis.createClient();
+
+  try {
+    await client.connect();
+    const serializedCompanyInfo = JSON.stringify(favorites);
+
+      // Set data in Redis with a prefixed key
+      const prefixedKey = req.query.username + ":favorites";
+      client.set(prefixedKey, serializedCompanyInfo, (err) => {
+        if (err) {
+          console.error(`Error setting data for ${prefixedKey}:`, err.message);
+        } else {
+          console.log(`Data set for ${prefixedKey}: ${serializedCompanyInfo}`);
+        }
+      });
+  } 
+  catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).send('Internal Server Error');
+  } 
+  finally {
+    // Close the Redis client
+    client.quit();
+  }
+});
 
 
 app.get('*', (req, res) => {
