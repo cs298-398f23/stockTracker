@@ -64,4 +64,22 @@ Open [http://localhost:3001](http://localhost:3001) to view it in your browser w
 
 When editing the 'server.js' file, server needs to be restarted in order to reflect any changes
 
+### Testing
+
+Add Jasmine to your package.json 
+`npm install --save-dev jasmine`
+
+Add supertest to your package.json
+`npm install --save-dev jasmine`
+
+Initialize Jasmine in your project
+`npx jasmine init`
+
+The previous command will create a spec directory. The test file will be in the spec directory. filepath spec/server.spec.js
+
+Set jasmine as your test script in your package.json
+`"scripts": { "test": "jasmine" }`
+
+To run tests `npm test` or `npx jasmine`
+
 ### AWS Configuration
