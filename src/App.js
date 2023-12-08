@@ -27,26 +27,28 @@ function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    
-      fetchSpotlightedStock(spotlightedStock);
+
+    fetchSpotlightedStock(spotlightedStock);
   }, [spotlightedStock]);
 
   useEffect(() => {
     const newIntervalID = setInterval(() => {
-      
-    fetchFavoriteStocks(username);
+
+      fetchFavoriteStocks(username);
     }, 3000);
 
     return () => clearInterval(newIntervalID);
   }, [username]);
-  
 
-  
+
+
 
   useEffect(() => {
-    if(username === "Guest"){
-    updateFavoriteStocks(username, [{"name": "Alphabet Inc Class A",
-    "ticker": "GOOGL",}]);
+    if (username === "Guest") {
+      updateFavoriteStocks(username, [{
+        "name": "Alphabet Inc Class A",
+        "ticker": "GOOGL",
+      }]);
     }
   }, []);
 
@@ -55,11 +57,47 @@ function App() {
   //   // fetchSpotlightedStock({"ticker": "GOOGL"})
   // } , [username]);
 
+  function checkLogin() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    axios.get('http://localhost:3001/api/validateUser', { params: { username, password } }).then((response) => {
+      console.log("True or false:")
+      console.log(response.data)
+      if (response.data) {
+        setUsername(username);
+        document.getElementById("username").value = "";
+        document.getElementById("password").value = "";
+      }
+      else {
+        alert("Invalid Login");
+      }
+    });
+  }
+
+  function addUser() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    axios.get('http://localhost:3001/api/addUser', { params: { username, password } }).then((response) => {
+      console.log(response.data)
+      if (response.data) {
+        setUsername(username);
+        document.getElementById("username").value = "";
+        document.getElementById("password").value = "";
+      }
+      else {
+        alert("Invalid Login");
+      }
+    });
+  }
+
+
+  function logout() {
+    setUsername("Guest");
+  }
 
   function updateFavoriteStocks(username, favorites) {
     try {
-      console.log(favorites)
-      axios.get('http://localhost:3001/api/updateFavoriteStocks', { params: { username, favorites } }).then(() => {fetchFavoriteStocks(username);});
+      axios.get('http://localhost:3001/api/updateFavoriteStocks', { params: { username, favorites } }).then(() => { fetchFavoriteStocks(username); });
     } catch (error) {
       console.error('Error fetching data:', error.message);
     }
@@ -77,7 +115,7 @@ function App() {
   async function fetchSpotlightedStock(stock) {
     try {
       const response = await axios.get('http://localhost:3001/api/getSpotlightedStock', { params: { stock } });
-  
+
       console.log("Response: ", response.data.ticker, "Request:", requestedTicker);
       if (response.data.ticker === requestedTicker) {
         setSpotlightedStock((prevSpotlightedStock) => {
@@ -94,37 +132,46 @@ function App() {
       console.error('Error fetching data:', error.message);
     }
   }
-  
 
-  async function editFavorites (editOption, stock) {
+
+  async function editFavorites(editOption, stock) {
     let stocks = [...favoriteStocks]
-    const condensedStock = {"name": stock.name, "ticker": stock.ticker};
-    if(editOption && !Object.keys(favoriteStocks[0]).includes(stock.ticker)){
-      
+    const condensedStock = { "name": stock.name, "ticker": stock.ticker };
+    if (editOption && !Object.keys(favoriteStocks[0]).includes(stock.ticker)) {
+
       stocks.push(condensedStock);
     }
-    else{
+    else {
       //figure this out
       const index = favoriteStocks.indexOf(condensedStock.ticker);
       stocks.pop(index);
-      if(stocks.length === 0){
-        stocks.push({ "name": "Alphabet Inc Class A",
-        "ticker": "GOOGL",})
+      if (stocks.length === 0) {
+        stocks.push({
+          "name": "Alphabet Inc Class A",
+          "ticker": "GOOGL",
+        })
 
       }
     }
-    
+
     updateFavoriteStocks(username, stocks);
 
   }
 
-  async function fetchFavoriteStocks (username) {
+  async function fetchFavoriteStocks(username) {
     try {
       const response = await axios.get('http://localhost:3001/api/getFavoriteStocks', { params: { username } });
 
-      console.log(response.data);
-      setFavoriteStocks(response.data);
-      
+      if (response.data.length === 0) {
+        setFavoriteStocks([{
+          "name": "Alphabet Inc Class A",
+          "ticker": "GOOGL",
+        }]);
+      }
+      else {
+        setFavoriteStocks(response.data);
+      }
+
     } catch (error) {
       console.error('Error fetching data:', error.message);
     }
@@ -135,7 +182,7 @@ function App() {
 
   // Create a bar chart when stockChangeValues change
   useEffect(() => {
-     // Get the canvas element
+    // Get the canvas element
     const ctx = document.getElementById('myBarChart').getContext('2d');
 
     // Create a bar chart
@@ -160,121 +207,134 @@ function App() {
       },
     });
 
-  // Cleanup function to destroy the chart when the component unmounts
-  return () => myBarChart.destroy();
-}, [stockChangeValues]);
+    // Cleanup function to destroy the chart when the component unmounts
+    return () => myBarChart.destroy();
+  }, [stockChangeValues]);
 
-const handleTabClick = (tab) => {
-  setActiveTab(tab);
-};
-const handleSelectChange = (e) => {
-  const selectedTicker = e.target.value;
-  console.log(selectedTicker);
-  const selectedStock = favoriteStocks.find((stock) => {
-    console.log(stock, stock.ticker)
-    return stock.ticker === selectedTicker});
-  console.log(selectedStock);
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+  };
+  const handleSelectChange = (e) => {
+    const selectedTicker = e.target.value;
+    console.log(selectedTicker);
+    const selectedStock = favoriteStocks.find((stock) => {
+      console.log(stock, stock.ticker)
+      return stock.ticker === selectedTicker
+    });
+    console.log(selectedStock);
 
-  // Check if the selected stock is different from the current spotlightedStock
-  if (selectedStock && selectedStock.ticker !== spotlightedStock.ticker) {
-    setSpotlightedStock(selectedStock);
-    setRequestedTicker(selectedStock.ticker); // Update requestedTicker if needed
-  }
-};
-
-
-return (
-  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr', height: '100vh' }}>
-    {/* Left side (Stock Info) */}
-    <div style={{ gridRow: '1', gridColumn: '1', flex: '1', overflow: 'auto', padding: '20px' }}>
-      {/* Your existing stock info code */}
-      <div style={{ gridRow: '4', gridColumn: '1', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
-  {spotlightedStock.changePercent !== "" ? <SearchBar setSpotlightedStock={setSpotlightedStock} setRequestedTicker={setRequestedTicker} fetchSpotlightedStock={fetchSpotlightedStock}/> : <div></div>}
-  
-  {/* Add some space */}
-  <div style={{ marginLeft: 'auto' }}>
-    <label htmlFor="dropdown" style={{ marginRight: '10px' }}>Select Favorite Stock To View:</label>
-    <select id="dropdown" style={{ padding: '8px', borderRadius: '4px', backgroundColor: '#fff', border: '1px solid #ccc', fontSize: '14px' }}
-    onChange={(e) => handleSelectChange(e)}
-    value={spotlightedStock.ticker}>
-      {console.log(favoriteStocks)}
-      {favoriteStocks.length > 0 && favoriteStocks.map((stock, index) =>(
-      <option value={stock.ticker} selected={spotlightedStock.ticker === stock.ticker}>{stock.name}: {stock.ticker}</option>))}
-      {/* Add more options as needed */}
-    </select>
-  </div>
-</div>
-
-<div style={{ textAlign: 'center', marginTop: '10px' }}>
-  <button
-    onClick={() => editFavorites(true, spotlightedStock)}
-    style={{
-      padding: '10px 20px',
-      fontSize: '16px',
-      fontWeight: 'bold',
-      backgroundColor: '#2ecc71',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '5px',
-      cursor: 'pointer',
-      transition: 'background-color 0.3s',
-    }}
-  >
-    Add to Favorites +
-  </button>
-  <button
-    onClick={() => editFavorites(false, spotlightedStock)}
-    style={{
-      padding: '10px 20px',
-      fontSize: '16px',
-      fontWeight: 'bold',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '5px',
-      cursor: 'pointer',
-      transition: 'background-color 0.3s',
-       marginLeft: '10px', 
-       backgroundColor: '#e74c3c' 
-    }}
-  >
-    Remove from Favorites -
-  </button>
-</div>
-
-      <div style={{
-  textAlign: 'center',
-  border: '1px solid #eaeaea',
-  padding: '20px',
-  borderRadius: '8px',
-  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-  backgroundColor: '#f9f9f9',
-  maxWidth: '300px',
-  margin: 'auto',
-}}>
-  {spotlightedStock.name && (
-    <>
-      <h3 style={{ margin: '0', color: '#333', fontSize: '24px' }}>{spotlightedStock.name}</h3>
-      <h4 style={{ margin: '5px 0', color: '#555', fontSize: '18px' }}>{spotlightedStock.ticker}</h4>
-      <p style={{ margin: '15px 0', fontSize: '22px', fontWeight: 'bold', color: spotlightedStock.changePrice !== undefined ? (spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71') : '' }}>
-        {spotlightedStock.price}
-      </p>
-      {spotlightedStock.changePercent && (
-        <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '16px' }}>
-          {spotlightedStock.changePercent}
-        </p>
-      )}
-      {spotlightedStock.changePrice && (
-        <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '16px' }}>
-          {spotlightedStock.changePrice}
-        </p>
-      )}
-    </>
-  )}
-</div>
+    // Check if the selected stock is different from the current spotlightedStock
+    if (selectedStock && selectedStock.ticker !== spotlightedStock.ticker) {
+      setSpotlightedStock(selectedStock);
+      setRequestedTicker(selectedStock.ticker); // Update requestedTicker if needed
+    }
+  };
 
 
-    </div>
-    
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr', height: '100vh' }}>
+      {/* Left side (Stock Info) */}
+      <div style={{ gridRow: '1', gridColumn: '1', flex: '1', overflow: 'auto', padding: '20px' }}>
+        {/* Your existing stock info code */}
+        <div style={{ gridRow: '4', gridColumn: '1', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
+          <div style={{ gridRow: '4', gridColumn: '1', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
+            <input id="username" type="text" placeholder="Username" style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }} />
+          </div>
+          <div style={{ gridRow: '4', gridColumn: '2', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
+            <input id="password" type="password" placeholder="Password" style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }} />
+          </div>
+          <div style={{ gridRow: '4', gridColumn: '3', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
+            <button id="login" onClick={() => checkLogin()} style={{ padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: 'blue', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: 'background-color 0.3s' }}>Login</button>
+          </div>
+          <div style={{ gridRow: '4', gridColumn: '4', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
+            <button id="addUser" onClick={() => addUser()} style={{ padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: 'blue', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: 'background-color 0.3s' }}>Register</button>
+          </div>
+          <button id="logout" onClick={() => logout()} style={{ padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: 'blue', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: 'background-color 0.3s' }}>Logout</button>
+
+        </div>
+        {spotlightedStock.changePercent !== "" ? <SearchBar setSpotlightedStock={setSpotlightedStock} setRequestedTicker={setRequestedTicker} fetchSpotlightedStock={fetchSpotlightedStock} /> : <div></div>}
+
+        <div style={{ textAlign: 'center', marginTop: '10px' }}>
+          <button
+            onClick={() => editFavorites(true, spotlightedStock)}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              backgroundColor: '#2ecc71',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s',
+            }}
+          >
+            Add to Favorites +
+          </button>
+          <button
+            onClick={() => editFavorites(false, spotlightedStock)}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s',
+              marginLeft: '10px',
+              backgroundColor: '#e74c3c'
+            }}
+          >
+            Remove from Favorites -
+          </button>
+        </div>
+
+        <div style={{
+          textAlign: 'center',
+          border: '1px solid #eaeaea',
+          padding: '20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          backgroundColor: '#f9f9f9',
+          maxWidth: '300px',
+          margin: 'auto',
+        }}>
+          {spotlightedStock.name && (
+            <>
+              <h3 style={{ margin: '0', color: '#333', fontSize: '24px' }}>{spotlightedStock.name}</h3>
+              <h4 style={{ margin: '5px 0', color: '#555', fontSize: '18px' }}>{spotlightedStock.ticker}</h4>
+              <p style={{ margin: '15px 0', fontSize: '22px', fontWeight: 'bold', color: spotlightedStock.changePrice !== undefined ? (spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71') : '' }}>
+                {spotlightedStock.price}
+              </p>
+              {spotlightedStock.changePercent && (
+                <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '16px' }}>
+                  {spotlightedStock.changePercent}
+                </p>
+              )}
+              {spotlightedStock.changePrice && (
+                <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '16px' }}>
+                  {spotlightedStock.changePrice}
+                </p>
+              )}
+            </>
+          )}
+
+        </div>
+        {/* Add some space */}
+        <div style={{ marginLeft: 'auto' }}>
+          <label htmlFor="dropdown" style={{ marginRight: '10px' }}>Select Favorite Stock To View:</label>
+          <select id="dropdown" style={{ padding: '8px', borderRadius: '4px', backgroundColor: '#fff', border: '1px solid #ccc', fontSize: '14px' }}
+            onChange={(e) => handleSelectChange(e)}
+            value={spotlightedStock.ticker}>
+            {favoriteStocks.length > 0 && favoriteStocks.map((stock, index) => (
+              <option value={stock.ticker} selected={spotlightedStock.ticker === stock.ticker}>{stock.name}: {stock.ticker}</option>))}
+            {/* Add more options as needed */}
+          </select>
+        </div>
+
+      </div>
+
 
       {/* Right side (Graph, Buttons, Search Bar, and Table) */}
       <div style={{ gridRow: '1', gridColumn: '2', display: 'grid', gridTemplateColumns: '1fr', gridTemplateRows: 'auto auto auto', gap: '20px', padding: '20px' }}>

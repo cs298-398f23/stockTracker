@@ -127,7 +127,6 @@ app.get('/api/getSpotlightedStock', async (req, res) => {
 
 app.get('/api/getFavoriteStocks', async (req, res) => {
   
-  let  favorites = [];
   const client = redis.createClient();
 
   try {
@@ -178,6 +177,67 @@ app.get('/api/updateFavoriteStocks', async (req, res) => {
     client.quit();
   }
 });
+
+app.get('/api/addUser', async (req, res) => {
+    
+    const client = redis.createClient();
+  
+    try {
+      await client.connect();
+      
+      console.log(req.query.username)
+       console.log(req.query.password);
+        // Set data in Redis with a prefixed key
+        const prefixedKey = req.query.username;
+        client.set(prefixedKey, req.query.password, (err) => {
+          if (err) {
+            console.error(`Error setting data for ${prefixedKey}:`, err.message);
+          } else {
+            console.log(`Data set for ${prefixedKey}`);
+          }
+        });
+    } 
+    catch (error) {
+      console.error("Error:", error.message);
+      res.status(500).send('Internal Server Error');
+    } 
+    finally {
+      // Close the Redis client
+      client.quit();
+    }
+})
+
+app.get('/api/validateUser', async (req, res) => {
+    
+    const client = redis.createClient();
+  
+    try {
+      await client.connect();
+      
+      console.log(req.query.username)
+        // Set data in Redis with a prefixed key
+        const prefixedKey = req.query.username;
+
+    
+        await client.get(prefixedKey).then((reply) => {
+          if (reply && reply === req.query.password) {
+              res.json(true);
+            }
+          else{
+              res.json(false);
+            }
+          })
+        
+    }
+    catch (error) {
+      console.error("Error:", error.message);
+      res.status(500).send('Internal Server Error');
+    } 
+    finally {
+      // Close the Redis client
+      client.quit();
+    }
+  })
 
 
 app.get('*', (req, res) => {
