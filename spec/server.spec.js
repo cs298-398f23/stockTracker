@@ -1,3 +1,4 @@
+/* eslint-disable jest/no-conditional-expect */
 // spec/server.js
 
 
@@ -156,6 +157,22 @@ describe('GET /api/getFavoriteStocks', () => {
    expect(Array.isArray(favoritesArray)).toBe(true);
 
  });
+});
+
+
+describe('GET /api/addUser', () => {
+  it('should return 200 OK and add a user in Redis', async () => {
+    // Assuming you have a test username and password
+    const testUsername = 'user1';
+    const testPassword = 'pass';
+
+    // Make a request to validate a user
+    const response = await request(app)
+      .get('/api/addUser')
+      .query({ username: testUsername, password: testPassword });
+
+    expect(response.status).toBe(200);
+  });
 });
 
 describe('GET /api/validateUser', () => {

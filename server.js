@@ -5,6 +5,7 @@ const cheerio = require('cheerio');
 const cors = require('cors');
 const redis = require('redis');
 const puppeteer = require('puppeteer');
+const { ok } = require('assert');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -141,6 +142,7 @@ async function updateFavoriteStocks(req, res) {
       } else {
         console.log(`Data set for ${prefixedKey}: ${serializedCompanyInfo}`);
       }
+    res.status(200).send('OK')
     });
   } catch (error) {
     console.error("Error:", error.message);
@@ -165,6 +167,7 @@ async function addUser(req, res) {
         console.log(`Data set for ${prefixedKey}`);
       }
     });
+    res.status(200).send('OK')
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).send('Internal Server Error');
@@ -210,7 +213,7 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:3001`)});
+  console.log(`Server is running on http://localhost:${PORT}`)});
 
 
 module.exports = app;
