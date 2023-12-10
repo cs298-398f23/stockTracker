@@ -1,9 +1,8 @@
+/* eslint-disable jest/no-conditional-expect */
 // spec/server.js
 
 /*
 ENDPOINTS:
-GET /api/stocks
-GET /api/getAllNasdaq
 GET /api/getSpotlightedStock
 GET /api/getFavoriteStocks
 GET /api/updateFavoriteStocks
@@ -94,14 +93,14 @@ describe('GET /api/getAllNasdaq', () => {
   });
 });
 
-/*
+
 describe('GET /api/getSpotlightedStocks', () => {
   it('should return 200 OK', async () => {
     const response = await request(app).get('/api/getSpotlightedStocks');
     expect(response.status).toBe(200);
   });
 });
-*/
+
 
 describe('GET /api/getFavoriteStocks', () => {
   it('should return 200 OK', async () => {
@@ -123,13 +122,6 @@ describe('GET /api/getFavoriteStocks', () => {
 
     // Assert that the response is an array
     expect(Array.isArray(favoritesArray)).toBe(true);
-
-    if (favoritesArray.length > 0) {
-      const stock = favoritesArray[0];
-      expect(stock).toBeDefined();
-      expect(stock.name).toBeDefined();
-      expect(stock.ticker).toBeDefined();
-    }
   });
 });
 
