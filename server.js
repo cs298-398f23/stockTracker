@@ -5,6 +5,7 @@ const cheerio = require('cheerio');
 const cors = require('cors');
 const redis = require('redis');
 const puppeteer = require('puppeteer');
+const bcrypt = require('bcrypt');
 const { ok } = require('assert');
 
 const app = express();
@@ -20,6 +21,8 @@ async function fetchStockData(req, res) {
     const url = `https://www.google.com/finance/markets/${pageName}`;
     const response = await axios.get(url);
 
+
+    // Use cheerio to parse HTML response
     const $ = cheerio.load(response.data);
     const stocks = [];
 
@@ -61,6 +64,7 @@ async function getAllNasdaq(req, res) {
       const stock = await client.get(ticker);
       const stockInfo = JSON.parse(stock);
       stocks[stockInfo.ticker] = stockInfo.name;
+
     });
 
     await Promise.all(promises);
@@ -77,8 +81,8 @@ async function getAllNasdaq(req, res) {
 // Function to get spotlighted stock data using Puppeteer
 async function getSpotlightedStock(req, res) {
   try {
-    const requestStock = req.query.stock;
-    const requestTicker = requestStock.ticker;
+    let requestStock = req.query.stock;
+    let requestTicker = requestStock.ticker;
 
     const browser = await puppeteer.launch({ headless: 'new' });
     const page = await browser.newPage();
@@ -108,6 +112,7 @@ async function getSpotlightedStock(req, res) {
   }
 }
 
+
 // Function to get favorite stocks from Redis
 async function getFavoriteStocks(req, res) {
   const client = redis.createClient();
@@ -117,7 +122,9 @@ async function getFavoriteStocks(req, res) {
 
     await client.get(`${req.query.username}:favorites`).then((stock) => {
       res.json(JSON.parse(stock));
-    });
+    })
+
+
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).send('Internal Server Error');
@@ -125,6 +132,8 @@ async function getFavoriteStocks(req, res) {
     client.quit();
   }
 }
+
+
 
 // Function to update favorite stocks in Redis
 async function updateFavoriteStocks(req, res) {
@@ -152,26 +161,46 @@ async function updateFavoriteStocks(req, res) {
   }
 }
 
+
+
 // Function to add a new user to Redis
 async function addUser(req, res) {
   const client = redis.createClient();
 
   try {
     await client.connect();
-    const prefixedKey = req.query.username;
 
-    client.set(prefixedKey, req.query.password, (err) => {
+    const username = req.query.username;
+    const password = req.query.password;
+
+    // Check if the username already exists in Redis
+    const existingUser = await client.get(username);
+
+    if (existingUser) {
+      // User already exists
+      res.status(400).send('Username already exists');
+      return;
+    }
+
+    // Hash the password using bcrypt
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Set data in Redis with a prefixed key
+    const prefixedKey = username;
+    client.set(prefixedKey, hashedPassword, (err) => {
       if (err) {
         console.error(`Error setting data for ${prefixedKey}:`, err.message);
+        res.status(500).send('Internal Server Error');
       } else {
         console.log(`Data set for ${prefixedKey}`);
+        res.status(200).send('User added successfully');
       }
     });
-    res.status(200).send('OK')
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).send('Internal Server Error');
   } finally {
+    // Close the Redis client
     client.quit();
   }
 }
@@ -182,19 +211,30 @@ async function validateUser(req, res) {
 
   try {
     await client.connect();
-    const prefixedKey = req.query.username;
 
-    await client.get(prefixedKey).then((reply) => {
-      if (reply && reply === req.query.password) {
+    const username = req.query.username;
+    const inputPassword = req.query.password;
+    // Get hashed password from Redis
+    const hashedPassword = await client.get(username);
+
+    if (hashedPassword) {
+      // Compare the input password with the hashed password
+      const isPasswordCorrect = await bcrypt.compare(inputPassword, hashedPassword);
+      
+      if (isPasswordCorrect) {
         res.json(true);
       } else {
         res.json(false);
       }
-    });
+    } else {
+      // User not found
+      res.json(false);
+    }
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).send('Internal Server Error');
   } finally {
+    // Close the Redis client
     client.quit();
   }
 }

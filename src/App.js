@@ -30,6 +30,7 @@ function App() {
 
   useEffect(() => {
 
+    console.log("Spotlighted Stock: ", spotlightedStock);
     fetchSpotlightedStock(spotlightedStock);
   }, [spotlightedStock]);
 
@@ -43,8 +44,6 @@ function App() {
   }, [username]);
 
 
-
-
   useEffect(() => {
     if (username === "Guest") {
       updateFavoriteStocks(username, [{
@@ -52,12 +51,11 @@ function App() {
         "ticker": "GOOGL",
       }]);
     }
-  }, []);
+    else {
+      updateFavoriteStocks(username, favoriteStocks);
+    }
+  }, [favoriteStocks]);
 
-  // useEffect(() => {
-  //   fetchFavoriteStocks(username);
-  //   // fetchSpotlightedStock({"ticker": "GOOGL"})
-  // } , [username]);
 
   function checkLogin() {
     const username = document.getElementById("username").value;
@@ -95,6 +93,18 @@ function App() {
 
   function logout() {
     setUsername("Guest");
+    setSpotlightedStock({
+      "name": "Alphabet Inc Class A",
+      "ticker": "GOOGL",
+      "price": "",
+      "changePercent": "",
+      "changePrice": "",
+    })
+    setFavoriteStocks([{
+      "name": "Alphabet Inc Class A",
+      "ticker": "GOOGL",
+    }]);
+    setRequestedTicker("GOOGL");
   }
 
   function updateFavoriteStocks(username, favorites) {
@@ -123,7 +133,9 @@ function App() {
         setSpotlightedStock((prevSpotlightedStock) => {
           // Use the previous state to avoid any race conditions
           if (prevSpotlightedStock.ticker === requestedTicker) {
+            ;
             return response.data;
+
           } else {
             // If the requestedTicker has changed in the meantime, do not update the state
             return prevSpotlightedStock;
@@ -139,24 +151,27 @@ function App() {
   async function editFavorites(editOption, stock) {
     let stocks = [...favoriteStocks]
     const condensedStock = { "name": stock.name, "ticker": stock.ticker };
-    if (editOption && !Object.keys(favoriteStocks[0]).includes(stock.ticker)) {
-
+    console.log("Stocks: ", stocks);
+    if (editOption && !favoriteStocks.some(favStock => favStock.ticker === stock.ticker)) {
+ 
       stocks.push(condensedStock);
-    }
-    else {
-      //figure this out
-      const index = favoriteStocks.indexOf(condensedStock.ticker);
-      stocks.pop(index);
+    } else if (!editOption) {
+
+      const indexToRemove = stocks.findIndex(favStock => favStock.ticker === stock.ticker);
+      if (indexToRemove !== -1) {
+        stocks.splice(indexToRemove, 1);
+      }
+
       if (stocks.length === 0) {
         stocks.push({
           "name": "Alphabet Inc Class A",
           "ticker": "GOOGL",
-        })
-
+        });
       }
     }
 
-    updateFavoriteStocks(username, stocks);
+
+    setFavoriteStocks(stocks);
 
   }
 
@@ -216,45 +231,92 @@ function App() {
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
-  const handleSelectChange = (e) => {
-    const selectedTicker = e.target.value;
-    console.log(selectedTicker);
-    const selectedStock = favoriteStocks.find((stock) => {
-      console.log(stock, stock.ticker)
-      return stock.ticker === selectedTicker
-    });
-    console.log(selectedStock);
-
-    // Check if the selected stock is different from the current spotlightedStock
-    if (selectedStock && selectedStock.ticker !== spotlightedStock.ticker) {
-      setSpotlightedStock(selectedStock);
-      setRequestedTicker(selectedStock.ticker); // Update requestedTicker if needed
-    }
-  };
 
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr', height: '100vh' }}>
       {/* Left side (Stock Info) */}
       <div style={{ gridRow: '1', gridColumn: '1', flex: '1', overflow: 'auto', padding: '20px' }}>
-        {/* Your existing stock info code */}
-        <div style={{ gridRow: '4', gridColumn: '1', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
-          <div style={{ gridRow: '4', gridColumn: '1', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
-            <input id="username" type="text" placeholder="Username" style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }} />
-          </div>
-          <div style={{ gridRow: '4', gridColumn: '2', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
-            <input id="password" type="password" placeholder="Password" style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }} />
-          </div>
-          <div style={{ gridRow: '4', gridColumn: '3', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
-            <button id="login" onClick={() => checkLogin()} style={{ padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: 'blue', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: 'background-color 0.3s' }}>Login</button>
-          </div>
-          <div style={{ gridRow: '4', gridColumn: '4', textAlign: 'center', display: 'flex', alignItems: 'center' }}>
-            <button id="addUser" onClick={() => addUser()} style={{ padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: 'blue', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: 'background-color 0.3s' }}>Register</button>
-          </div>
-          <button id="logout" onClick={() => logout()} style={{ padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: 'blue', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: 'background-color 0.3s' }}>Logout</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h1>{username}</h1>
+          <button
+            id="logout"
+            onClick={() => logout()}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              backgroundColor: 'blue',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s',
+            }}
+          >
+            Logout
+          </button>
 
         </div>
+
+        <div style={{ textAlign: 'center', display: 'flex', alignItems: 'center' }}>
+          
+            <input
+              id="username"
+              type="text"
+              placeholder="Username"
+              style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }}
+            />
+            <input
+              id="password"
+              type="password"
+              placeholder="Password"
+              style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }}
+            />
+          
+            <button
+              id="login"
+              onClick={() => checkLogin()}
+              style={{
+                padding: '10px 20px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                backgroundColor: 'blue',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s',
+              }}
+            >
+              Login
+            </button>
+
+          
+            <button
+              id="addUser"
+              onClick={() => addUser()}
+              style={{
+                padding: '10px 20px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                backgroundColor: 'blue',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s',
+              }}
+            >
+              Register
+            </button>
+         
+
+        </div>
+        {/* SearchBar component goes here */}
         {spotlightedStock.changePercent !== "" ? <SearchBar setSpotlightedStock={setSpotlightedStock} setRequestedTicker={setRequestedTicker} fetchSpotlightedStock={fetchSpotlightedStock} /> : <div></div>}
+
+
 
         <div style={{ textAlign: 'center', marginTop: '10px' }}>
           <button
@@ -321,22 +383,37 @@ function App() {
               )}
             </>
           )}
-
         </div>
-        {/* Add some space */}
+
         <div style={{ marginLeft: 'auto' }}>
-          <label htmlFor="dropdown" style={{ marginRight: '10px' }}>Select Favorite Stock To View:</label>
-          <select id="dropdown" style={{ padding: '8px', borderRadius: '4px', backgroundColor: '#fff', border: '1px solid #ccc', fontSize: '14px' }}
-            onChange={(e) => handleSelectChange(e)}
-            value={spotlightedStock.ticker}>
+          <div>
+            <label htmlFor="dropdown" style={{ marginRight: '10px' }}>Select Favorite Stock To View:</label>
             {favoriteStocks.length > 0 && favoriteStocks.map((stock, index) => (
-              <option value={stock.ticker} selected={spotlightedStock.ticker === stock.ticker}>{stock.name}: {stock.ticker}</option>))}
-            {/* Add more options as needed */}
-          </select>
+              <button
+                key={index}
+                style={{
+                  margin: '0 5px',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  backgroundColor: spotlightedStock.ticker === stock.ticker ? '#eee' : '#fff',
+                  border: '1px solid #ccc',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+                onClick={() => {
+                  if (stock && stock.ticker !== spotlightedStock.ticker) {
+                    console.log("hits")
+                    setSpotlightedStock(stock);
+                    setRequestedTicker(stock.ticker); // Update requestedTicker if needed
+                  }
+                }}
+              >
+                {stock.name}: {stock.ticker}
+              </button>
+            ))}
+          </div>
         </div>
-
       </div>
-
 
       {/* Right side (Graph, Buttons, Search Bar, and Table) */}
       <div style={{ gridRow: '1', gridColumn: '2', display: 'grid', gridTemplateColumns: '1fr', gridTemplateRows: 'auto auto auto', gap: '20px', padding: '20px' }}>
@@ -376,8 +453,9 @@ function App() {
           </table>
         </div>
       </div>
-    </div>
+    </div >
   );
+
 }
 
 export default App;

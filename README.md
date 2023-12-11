@@ -10,7 +10,7 @@ Jacob Smith, Vito Leone, Colin Conway, David Olsakowski
 
 In order to install the necceary dependencies run the following command:
 
-`npm install express axios cheerio react react-dom chart.js cors redis csvtojson puppeteer jasmine supertest`
+`npm install express axios cheerio react react-dom chart.js cors redis csvtojson puppeteer jasmine supertest bcrypt`
 
 ### Import Redis Data
 
