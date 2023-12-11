@@ -4,6 +4,8 @@ import { Chart } from 'chart.js/auto';
 import SearchBar from './SearchBar';
 
 function App() {
+  const SERVER = 'http://localhost:3001'
+
   const [activeTab, setActiveTab] = useState('gainers');
   const [requestedTicker, setRequestedTicker] = useState('GOOGL')
   const [spotlightedStock, setSpotlightedStock] = useState({
@@ -58,9 +60,7 @@ function App() {
   function checkLogin() {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
-    console.log("Clicked")
-    axios.get('http://localhost:3001/api/validateUser', { params: { username, password } }).then((response) => {
-      console.log("Response: ", response.data)
+    axios.get(`${SERVER}/api/validateUser`, { params: { username, password } }).then((response) => {
       console.log("True or false:")
       console.log(response.data)
       if (response.data) {
@@ -77,7 +77,7 @@ function App() {
   function addUser() {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
-    axios.get('http://localhost:3001/api/addUser', { params: { username, password } }).then((response) => {
+    axios.get(`${SERVER}/api/addUser`, { params: { username, password } }).then((response) => {
       console.log(response.data)
       if (response.data) {
         setUsername(username);
@@ -109,8 +109,7 @@ function App() {
 
   function updateFavoriteStocks(username, favorites) {
     try {
-      console.log(favorites)
-      axios.get('http://localhost:3001/api/updateFavoriteStocks', { params: { username, favorites } }).then(() => { fetchFavoriteStocks(username); });
+      axios.get(`${SERVER}/api/updateFavoriteStocks`, { params: { username, favorites } }).then(() => { fetchFavoriteStocks(username); });
     } catch (error) {
       console.error('Error fetching data:', error.message);
     }
@@ -118,7 +117,7 @@ function App() {
 
   async function fetchGraphInfo(pageName) {
     try {
-      const response = await axios.get('http://localhost:3001/api/stocks', { params: { pageName } });
+      const response = await axios.get(`${SERVER}/api/stocks`, { params: { pageName } });
       setStocks(response.data);
     } catch (error) {
       console.error('Error fetching data:', error.message);
@@ -127,9 +126,8 @@ function App() {
 
   async function fetchSpotlightedStock(stock) {
     try {
-      console.log("Stock: ", stock);
-      const response = await axios.get('http://localhost:3001/api/getSpotlightedStock', { params: { stock } });
-      console.log(response)
+      const response = await axios.get(`${SERVER}/api/getSpotlightedStock`, { params: { stock } });
+
       console.log("Response: ", response.data.ticker, "Request:", requestedTicker);
       if (response.data.ticker === requestedTicker) {
         setSpotlightedStock((prevSpotlightedStock) => {
@@ -179,7 +177,7 @@ function App() {
 
   async function fetchFavoriteStocks(username) {
     try {
-      const response = await axios.get('http://localhost:3001/api/getFavoriteStocks', { params: { username } });
+      const response = await axios.get(`${SERVER}/api/getFavoriteStocks`, { params: { username } });
 
       if (response.data.length === 0) {
         setFavoriteStocks([{
