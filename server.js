@@ -5,7 +5,7 @@ const cheerio = require('cheerio');
 const cors = require('cors');
 const redis = require('redis');
 const puppeteer = require('puppeteer');
-const { request } = require('http');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,31 +20,31 @@ app.get('/api/stocks', async (req, res) => {
     const url = `https://www.google.com/finance/markets/${pageName}`;
     const response = await axios.get(url);
 
-    
+
     // Use cheerio to parse HTML response
     const $ = cheerio.load(response.data);
 
     // Extract the data you need using cheerio selectors
     const stocks = [];
     $('.Sy70mc li').each((index, element) => {
-      
+
       if (index < 10)  // Limit to 10 results (top 10 stocks
       {
         const name = $(element).find('.ZvmM7').text().trim();
         const ticker = $(element).find('.COaKTb').text().trim();
-        
+
         const price = $(element).find('.P2Luy').text()
         const sign = price.split('$')[0]
-        const change = sign + $(element).find('.JwB6zf').text().trim() ;
-        
-        
+        const change = sign + $(element).find('.JwB6zf').text().trim();
+
+
         stocks.push({ pageName, name, ticker, price, change });
       } else {
-          return false;
+        return false;
       }
 
     });
-    
+
     res.json(stocks);
   } catch (error) {
     console.error('Error fetching data:', error.message);
@@ -71,7 +71,7 @@ app.get('/api/getAllNasdaq', async (req, res) => {
       const stock = await client.get(ticker);
       const stockInfo = JSON.parse(stock);
       stocks[stockInfo.ticker] = stockInfo.name;
-      
+
     });
 
     // Wait for all promises to resolve
@@ -92,7 +92,7 @@ app.get('/api/getSpotlightedStock', async (req, res) => {
   try {
     let requestStock = req.query.stock;
     let requestTicker = requestStock.ticker;
-    
+
 
     const browser = await puppeteer.launch({ headless: 'new' });
     const page = await browser.newPage();
@@ -114,7 +114,6 @@ app.get('/api/getSpotlightedStock', async (req, res) => {
     stockInfo.changePrice = await changeElement.$eval('.P2Luy', element => element.textContent.trim());
     stockInfo.changePercent = await changeElement.$eval('.JwB6zf', element => element.textContent.trim());
 
-    
     res.json(stockInfo);
 
 
@@ -126,7 +125,7 @@ app.get('/api/getSpotlightedStock', async (req, res) => {
 });
 
 app.get('/api/getFavoriteStocks', async (req, res) => {
-  
+
   const client = redis.createClient();
 
   try {
@@ -134,14 +133,15 @@ app.get('/api/getFavoriteStocks', async (req, res) => {
 
     // Get all keys
     await client.get(`${req.query.username}:favorites`).then((stock) => {
-      res.json(JSON.parse(stock));})
+      res.json(JSON.parse(stock));
+    })
 
-    
-  } 
+
+  }
   catch (error) {
     console.error("Error:", error.message);
     res.status(500).send('Internal Server Error');
-  } 
+  }
   finally {
     // Close the Redis client
     client.quit();
@@ -150,7 +150,7 @@ app.get('/api/getFavoriteStocks', async (req, res) => {
 
 
 app.get('/api/updateFavoriteStocks', async (req, res) => {
-  
+
   const favorites = req.query.favorites;
   const client = redis.createClient();
 
@@ -158,86 +158,102 @@ app.get('/api/updateFavoriteStocks', async (req, res) => {
     await client.connect();
     const serializedCompanyInfo = JSON.stringify(favorites);
 
-      // Set data in Redis with a prefixed key
-      const prefixedKey = req.query.username + ":favorites";
-      client.set(prefixedKey, serializedCompanyInfo, (err) => {
-        if (err) {
-          console.error(`Error setting data for ${prefixedKey}:`, err.message);
-        } else {
-          console.log(`Data set for ${prefixedKey}: ${serializedCompanyInfo}`);
-        }
-      });
-  } 
+    // Set data in Redis with a prefixed key
+    const prefixedKey = req.query.username + ":favorites";
+    client.set(prefixedKey, serializedCompanyInfo, (err) => {
+      if (err) {
+        console.error(`Error setting data for ${prefixedKey}:`, err.message);
+      } else {
+        console.log(`Data set for ${prefixedKey}: ${serializedCompanyInfo}`);
+      }
+    });
+  }
   catch (error) {
     console.error("Error:", error.message);
     res.status(500).send('Internal Server Error');
-  } 
+  }
   finally {
     // Close the Redis client
     client.quit();
   }
 });
 
+
 app.get('/api/addUser', async (req, res) => {
-    
-    const client = redis.createClient();
-  
-    try {
-      await client.connect();
-      
-      console.log(req.query.username)
-       console.log(req.query.password);
-        // Set data in Redis with a prefixed key
-        const prefixedKey = req.query.username;
-        client.set(prefixedKey, req.query.password, (err) => {
-          if (err) {
-            console.error(`Error setting data for ${prefixedKey}:`, err.message);
-          } else {
-            console.log(`Data set for ${prefixedKey}`);
-          }
-        });
-    } 
-    catch (error) {
-      console.error("Error:", error.message);
-      res.status(500).send('Internal Server Error');
-    } 
-    finally {
-      // Close the Redis client
-      client.quit();
+  const client = redis.createClient();
+
+  try {
+    await client.connect();
+
+    const username = req.query.username;
+    const password = req.query.password;
+
+    // Check if the username already exists in Redis
+    const existingUser = await client.get(username);
+
+    if (existingUser) {
+      // User already exists
+      res.status(400).send('Username already exists');
+      return;
     }
-})
+
+    // Hash the password using bcrypt
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Set data in Redis with a prefixed key
+    const prefixedKey = username;
+    client.set(prefixedKey, hashedPassword, (err) => {
+      if (err) {
+        console.error(`Error setting data for ${prefixedKey}:`, err.message);
+        res.status(500).send('Internal Server Error');
+      } else {
+        console.log(`Data set for ${prefixedKey}`);
+        res.status(200).send('User added successfully');
+      }
+    });
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).send('Internal Server Error');
+  } finally {
+    // Close the Redis client
+    client.quit();
+  }
+});
+
+
 
 app.get('/api/validateUser', async (req, res) => {
-    
-    const client = redis.createClient();
-  
-    try {
-      await client.connect();
-      
-      console.log(req.query.username)
-        // Set data in Redis with a prefixed key
-        const prefixedKey = req.query.username;
+  const client = redis.createClient();
 
-    
-        await client.get(prefixedKey).then((reply) => {
-          if (reply && reply === req.query.password) {
-              res.json(true);
-            }
-          else{
-              res.json(false);
-            }
-          })
-        
+  try {
+    await client.connect();
+
+    const username = req.query.username;
+    const inputPassword = req.query.password;
+    // Get hashed password from Redis
+    const hashedPassword = await client.get(username);
+
+    if (hashedPassword) {
+      // Compare the input password with the hashed password
+      const isPasswordCorrect = await bcrypt.compare(inputPassword, hashedPassword);
+      
+      if (isPasswordCorrect) {
+        res.json(true);
+      } else {
+        res.json(false);
+      }
+    } else {
+      // User not found
+      res.json(false);
     }
-    catch (error) {
-      console.error("Error:", error.message);
-      res.status(500).send('Internal Server Error');
-    } 
-    finally {
-      // Close the Redis client
-      client.quit();
-    }
-  })
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).send('Internal Server Error');
+  } finally {
+    // Close the Redis client
+    client.quit();
+  }
+});
 
 
 app.get('*', (req, res) => {
