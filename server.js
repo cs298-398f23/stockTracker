@@ -191,11 +191,13 @@ async function addUser(req, res) {
       if (err) {
         console.error(`Error setting data for ${prefixedKey}:`, err.message);
         res.status(500).send('Internal Server Error');
-      } else {
-        console.log(`Data set for ${prefixedKey}`);
-        res.status(200).send('User added successfully');
       }
+      // } else {
+      //   console.log(`Data set for ${prefixedKey}`);
+      //   res.status(200).send('User added successfully');
+      // }
     });
+    res.status(200).send('OK')
   } catch (error) {
     console.error("Error:", error.message);
     res.status(500).send('Internal Server Error');
