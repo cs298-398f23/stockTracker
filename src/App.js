@@ -19,14 +19,27 @@ function App() {
   const [stocks, setStocks] = useState([]);
   const [favoriteStocks, setFavoriteStocks] = useState([]);
   const [username, setUsername] = useState("Guest");
+    // Add a state to keep track of the interval ID
+    const [intervalID, setIntervalID] = useState(null);
 
   useEffect(() => {
+    // Clear the existing interval
+    clearInterval(intervalID);
+  
+    // Set up a new interval with the updated activeTab value
     const newIntervalID = setInterval(() => {
       fetchGraphInfo(activeTab);
     }, 5000);
-
+  
+    // Save the new interval ID
+    setIntervalID(newIntervalID);
+  
+    // Clear the interval when the component unmounts or when activeTab changes
     return () => clearInterval(newIntervalID);
   }, [activeTab]);
+  
+
+  
 
   useEffect(() => {
 
@@ -153,7 +166,7 @@ function App() {
     const condensedStock = { "name": stock.name, "ticker": stock.ticker };
     console.log("Stocks: ", stocks);
     if (editOption && !favoriteStocks.some(favStock => favStock.ticker === stock.ticker)) {
- 
+
       stocks.push(condensedStock);
     } else if (!editOption) {
 
@@ -260,57 +273,57 @@ function App() {
         </div>
 
         <div style={{ textAlign: 'center', display: 'flex', alignItems: 'center' }}>
-          
-            <input
-              id="username"
-              type="text"
-              placeholder="Username"
-              style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }}
-            />
-            <input
-              id="password"
-              type="password"
-              placeholder="Password"
-              style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }}
-            />
-          
-            <button
-              id="login"
-              onClick={() => checkLogin()}
-              style={{
-                padding: '10px 20px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                backgroundColor: 'blue',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s',
-              }}
-            >
-              Login
-            </button>
 
-          
-            <button
-              id="addUser"
-              onClick={() => addUser()}
-              style={{
-                padding: '10px 20px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                backgroundColor: 'blue',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s',
-              }}
-            >
-              Register
-            </button>
-         
+          <input
+            id="username"
+            type="text"
+            placeholder="Username"
+            style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }}
+          />
+          <input
+            id="password"
+            type="password"
+            placeholder="Password"
+            style={{ padding: '8px', fontSize: '16px', margin: '10px 0', marginRight: '10px' }}
+          />
+
+          <button
+            id="login"
+            onClick={() => checkLogin()}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              backgroundColor: 'blue',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s',
+            }}
+          >
+            Login
+          </button>
+
+
+          <button
+            id="addUser"
+            onClick={() => addUser()}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              backgroundColor: 'blue',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s',
+            }}
+          >
+            Register
+          </button>
+
 
         </div>
         {/* SearchBar component goes here */}
@@ -366,19 +379,19 @@ function App() {
         }}>
           {spotlightedStock.name && (
             <>
-              <h3 style={{ margin: '0', color: '#333', fontSize: '24px' }}>{spotlightedStock.name}</h3>
-              <h4 style={{ margin: '5px 0', color: '#555', fontSize: '18px' }}>{spotlightedStock.ticker}</h4>
-              <p style={{ margin: '15px 0', fontSize: '22px', fontWeight: 'bold', color: spotlightedStock.changePrice !== undefined ? (spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71') : '' }}>
+              <h4 style={{ margin: '0', color: '#333', fontSize: '30px' }}>{spotlightedStock.name}</h4>
+              <h3 style={{ margin: '5px 0', color: '#555', fontSize: '24px' }}>{spotlightedStock.ticker}</h3>
+              <p style={{ margin: '15px 0', fontSize: '30px', fontWeight: 'bold', color: spotlightedStock.changePrice !== undefined ? (spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71') : '' }}>
                 {spotlightedStock.price}
               </p>
               {spotlightedStock.changePercent && (
-                <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '16px' }}>
-                  {spotlightedStock.changePercent}
+                <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '24px' }}>
+                  {spotlightedStock.changePrice.includes('-') ? `-${spotlightedStock.changePercent}` : `+${spotlightedStock.changePercent}`}
                 </p>
               )}
               {spotlightedStock.changePrice && (
-                <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '16px' }}>
-                  {spotlightedStock.changePrice}
+                <p style={{ margin: '5px 0', color: spotlightedStock.changePrice.includes('-') ? '#e74c3c' : '#2ecc71', fontSize: '24px' }}>
+                  {spotlightedStock.changePrice.includes('-') ? `-$${spotlightedStock.changePrice.split('-')[1]}` : `+$${spotlightedStock.changePrice.split('+')[1]}`}
                 </p>
               )}
             </>
@@ -387,7 +400,7 @@ function App() {
 
         <div style={{ marginLeft: 'auto' }}>
           <div>
-            <label htmlFor="dropdown" style={{ marginRight: '10px' }}>Select Favorite Stock To View:</label>
+            <label htmlFor="dropdown" style={{ marginRight: '10px', fontSize: '20px' }}>Select Favorite Stock To View:</label>
             {favoriteStocks.length > 0 && favoriteStocks.map((stock, index) => (
               <button
                 key={index}
@@ -397,7 +410,7 @@ function App() {
                   borderRadius: '4px',
                   backgroundColor: spotlightedStock.ticker === stock.ticker ? '#eee' : '#fff',
                   border: '1px solid #ccc',
-                  fontSize: '14px',
+                  fontSize: '20px',
                   cursor: 'pointer',
                 }}
                 onClick={() => {
@@ -422,9 +435,62 @@ function App() {
 
         {/* Buttons */}
         <div style={{ gridRow: '2', gridColumn: '1', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <button id="gainers" onClick={() => handleTabClick('gainers')} className={activeTab === 'gainers' ? 'active' : ''}>Gainers</button>
-          <button id="losers" onClick={() => handleTabClick('losers')} className={activeTab === 'losers' ? 'active' : ''}>Losers</button>
-          <button id="active" onClick={() => handleTabClick('most-active')} className={activeTab === 'most-active' ? 'active' : ''}>Most Active</button>
+
+          <button
+            id="gainers"
+            onClick={() => handleTabClick('gainers')}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              backgroundColor: 'Green',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s',
+              marginRight: '10px',
+            }}
+          >
+            Gainers
+          </button>
+          <button
+            id="losers"
+            onClick={() => handleTabClick('losers')}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              backgroundColor: 'Red',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s',
+              marginRight: '10px',
+            }}
+          >
+            Losers
+          </button>
+          <button
+            id="active"
+            onClick={() => handleTabClick('most-active')}
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              backgroundColor: 'Orange',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s',
+            }}
+          >
+            Most Active
+          </button>
+
+
         </div>
 
         {/* Table */}
@@ -432,19 +498,19 @@ function App() {
           <table style={{ margin: '10px auto', fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#333', width: '100%' }}>
             <thead style={{ background: '#f2f2f2' }}>
               <tr>
-                <th style={{ padding: '10px', textAlign: 'left' }}>Ticker</th>
-                <th style={{ padding: '10px', textAlign: 'left' }}>Stock Name</th>
-                <th style={{ padding: '10px', textAlign: 'left' }}>Stock Price</th>
-                <th style={{ padding: '10px', textAlign: 'left' }}>% Change</th>
+                <th style={{ padding: '10px', textAlign: 'left', fontSize: '16px' }}>Ticker</th>
+                <th style={{ padding: '10px', textAlign: 'left', fontSize: '16px' }}>Stock Name</th>
+                <th style={{ padding: '10px', textAlign: 'left', fontSize: '16px' }}>Stock Price</th>
+                <th style={{ padding: '10px', textAlign: 'left', fontSize: '16px' }}>% Change</th>
               </tr>
             </thead>
             <tbody>
               {stocks.map((stock, index) => (
                 <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
-                  <td style={{ padding: '10px', textAlign: 'left' }}>{stock.ticker}</td>
-                  <td style={{ padding: '10px', textAlign: 'left' }}>{stock.name}</td>
-                  <td style={{ padding: '10px', textAlign: 'left' }}>{stock.price}</td>
-                  <td style={{ padding: '10px', textAlign: 'left', color: stock.change.includes('-') ? 'red' : 'green' }}>
+                  <td style={{ padding: '10px', textAlign: 'left', fontSize: '16px' }}>{stock.ticker}</td>
+                  <td style={{ padding: '10px', textAlign: 'left', fontSize: '16px' }}>{stock.name}</td>
+                  <td style={{ padding: '10px', textAlign: 'left', fontSize: '16px' }}>{stock.price}</td>
+                  <td style={{ padding: '10px', textAlign: 'left', fontSize: '16px', color: stock.change.includes('-') ? 'red' : 'green' }}>
                     {stock.change}
                   </td>
                 </tr>
