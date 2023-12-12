@@ -43,7 +43,6 @@ function App() {
 
   useEffect(() => {
 
-    console.log("Spotlighted Stock: ", spotlightedStock);
     fetchSpotlightedStock(spotlightedStock);
   }, [spotlightedStock]);
 
@@ -141,12 +140,10 @@ function App() {
     try {
       const response = await axios.get(`${SERVER}/api/getSpotlightedStock`, { params: { stock } });
 
-      console.log("Response: ", response.data.ticker, "Request:", requestedTicker);
       if (response.data.ticker === requestedTicker) {
         setSpotlightedStock((prevSpotlightedStock) => {
           // Use the previous state to avoid any race conditions
           if (prevSpotlightedStock.ticker === requestedTicker) {
-            ;
             return response.data;
 
           } else {
@@ -164,7 +161,6 @@ function App() {
   async function editFavorites(editOption, stock) {
     let stocks = [...favoriteStocks]
     const condensedStock = { "name": stock.name, "ticker": stock.ticker };
-    console.log("Stocks: ", stocks);
     if (editOption && !favoriteStocks.some(favStock => favStock.ticker === stock.ticker)) {
 
       stocks.push(condensedStock);

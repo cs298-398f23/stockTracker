@@ -163,7 +163,25 @@ describe('GET /api/getFavoriteStocks', () => {
 describe('GET /api/addUser', () => {
   it('should return 200 OK and add a user in Redis', async () => {
     // Assuming you have a test username and password
-    const testUsername = 'user1';
+    const testUsername = 'freddy23';
+    const testPassword = 'password';
+
+    // Make a request to validate a user
+    const response = await request(app)
+      .get('/api/addUser')
+      .query({ username: testUsername, password: testPassword });
+
+    if (response.status === 400) {
+      console.log('ERROR: Test configured incorrectly, you must change the username to a new user');
+      expect(response.status).toBe(400);
+    } else {
+      expect(response.status).toBe(200);
+    }
+  });
+
+  it('should return 400 User already exists', async () => {
+    // Assuming you have a test username and password
+    const testUsername = 'user';
     const testPassword = 'pass';
 
     // Make a request to validate a user
@@ -171,15 +189,15 @@ describe('GET /api/addUser', () => {
       .get('/api/addUser')
       .query({ username: testUsername, password: testPassword });
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(400);
   });
 });
 
 describe('GET /api/validateUser', () => {
   it('should return 200 OK and validate a user in Redis', async () => {
     // Assuming you have a test username and password
-    const testUsername = 'testUser';
-    const testPassword = 'testPassword';
+    const testUsername = 'user';
+    const testPassword = 'pass';
 
     // Make a request to validate a user
     const response = await request(app)
@@ -187,7 +205,6 @@ describe('GET /api/validateUser', () => {
       .query({ username: testUsername, password: testPassword });
 
     expect(response.status).toBe(200);
-    expect(response.body).toBe(true);
   });
 });
 

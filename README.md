@@ -17,7 +17,7 @@ In order to install the necceary dependencies run the following command:
 First install Redis and start the Redis server by executing `redis-server`. To ensure the server has been started correctly, type `redis-cli` to access the database directly. After the redis server has started, run the command below in order to populate your 
 redis DB with Nasdaq ticker symbols and names:
 
-`node importNasaq.js`
+`node importNasdaq.js`
 
 ## Running the App: Development
 
